@@ -1,44 +1,52 @@
-# @orkestrel/workflow
+# @orkestrel/sse
 
-A typed workflow engine for the `@orkestrel` line — a serializable
-`Workflow → Phase → Task` tree that a UI or an LLM authors as pure JSON, and
-a thin `WorkflowRunner` executes by COMPOSING the shipped substrate (a
-per-phase `Runner`, `Abort`, `Timeout`, `Budget`, and a cooperative
-cross-environment `Scheduler`) rather than re-implementing its own
-concurrency / retry / abort machinery.
+A typed Server-Sent Events parser — incremental, spec-compliant parsing of
+event-stream chunks into typed events with `data`, `event`, `id`, and `retry`
+fields. Feed it string chunks as they arrive; a blank line dispatches the
+accumulated event, and a partial line or in-progress event split across
+chunk boundaries is buffered until the rest arrives. A pure functional
+primitive — no Emitter, no events, no server / HTTP / agent coupling; it
+never throws on malformed input. Part of the `@orkestrel` line.
 
 ## Install
 
 ```sh
-npm install @orkestrel/workflow
+npm install @orkestrel/sse
 ```
 
 ## Requirements
 
-- Core is cross-environment ESM; `./browser` adds browser-native cooperative
-  scheduler backends (`requestAnimationFrame` / `requestIdleCallback` /
-  Prioritized Task Scheduling), `./server` adds the Node-native
-  `setImmediate` scheduler backend
+- Node.js >= 24
+- ESM + CJS (dual-format build)
+- No runtime dependencies
 
-## Status
+## Usage
 
-Pre-release (`0.0.1`): the definition contract, the live entity tree, the
-thin runner (with the `function` / `tool` / `agent` task forms and the
-depth/cycle-bounded agent-native recursion), the durable `WorkflowStore`
-(in-memory + driver-pluggable), and the cooperative `Scheduler` (the
-cross-environment default plus the browser and Node environment backends)
-are all implemented and tested, but the public API is still unstable and
-may change without notice. See [guides/src/workflow.md](./guides/src/workflow.md)
-for the full documented surface.
+```ts
+import { createSSEParser } from '@orkestrel/sse'
+
+const parser = createSSEParser()
+parser.parse('data: a\ndata: b\n\n') // [{ data: 'a\nb' }] - the two data lines joined
+parser.parse('event: ping\ndata: 1') // [] - buffered until its blank line
+parser.parse('\n\n') // [{ data: '1', event: 'ping' }]
+
+parser.reset() // drop any buffered partial line / in-progress event
+```
+
+Pair it with a `TextDecoder({ stream: true })` when reading a byte stream so
+multi-byte UTF-8 characters split across reads are handled — the decoder
+handles partial characters, this parser handles partial lines and events.
+
+## Guide
+
+For the full surface — the `SSEParser` class, its `SSEEvent` shape, the wire
+format it implements, and the `createSSEParser` factory — see
+[`guides/src/sse.md`](guides/src/sse.md).
 
 ## Package
 
-Published as three environment-scoped entry points per the `exports` field
-in `package.json`: `.` (the shared, environment-agnostic core — the
-definition/entity/runner surface plus the cross-environment `Scheduler`
-default), `./browser` (adds the browser-native scheduler backends), and
-`./server` (adds the Node-native scheduler backend). Core ships dual
-ESM+CJS builds; `./browser` is ESM-only.
+Published as a single typed entry point per the `exports` field in
+`package.json`.
 
 ## License
 

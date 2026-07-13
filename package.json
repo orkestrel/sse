@@ -1,21 +1,22 @@
 {
-	"name": "@orkestrel/workflow",
+	"name": "@orkestrel/sse",
 	"version": "0.0.1",
-	"description": "A typed workflow engine for the @orkestrel line — a serializable Workflow → Phase → Task tree run by a composed runner on a cooperative scheduler. Part of the @orkestrel line.",
+	"description": "A typed Server-Sent Events parser — incremental, spec-compliant parsing of event-stream chunks into typed events with data, event, id, and retry fields. Part of the @orkestrel line.",
 	"keywords": [
-		"orchestration",
-		"runner",
-		"scheduler",
-		"task",
-		"typescript",
-		"workflow"
+		"event-stream",
+		"eventsource",
+		"parser",
+		"server-sent-events",
+		"sse",
+		"streaming",
+		"typescript"
 	],
-	"homepage": "https://github.com/orkestrel/workflow#readme",
-	"bugs": "https://github.com/orkestrel/workflow/issues",
+	"homepage": "https://github.com/orkestrel/sse#readme",
+	"bugs": "https://github.com/orkestrel/sse/issues",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/orkestrel/workflow.git"
+		"url": "git+https://github.com/orkestrel/sse.git"
 	},
 	"files": [
 		"dist",
@@ -25,6 +26,7 @@
 	"sideEffects": false,
 	"main": "./dist/src/core/index.cjs",
 	"module": "./dist/src/core/index.js",
+	"types": "./dist/src/core/index.d.ts",
 	"exports": {
 		".": {
 			"import": {
@@ -60,16 +62,6 @@
 		"build:src": "npm run build:src:core",
 		"build:src:core": "vite build --config configs/src/vite.core.config.ts && npm run copy dist/src/core/index.d.ts dist/src/core/index.d.cts",
 		"prepublishOnly": "npm run format:check && npm run lint:check && npm run check && npm run check:src && npm run build && npm test"
-	},
-	"dependencies": {
-		"@orkestrel/abort": "^0.0.1",
-		"@orkestrel/agent": "^0.0.1",
-		"@orkestrel/budget": "^0.0.1",
-		"@orkestrel/contract": "^0.0.1",
-		"@orkestrel/database": "^0.0.2",
-		"@orkestrel/emitter": "^0.0.1",
-		"@orkestrel/queue": "^0.0.1",
-		"@orkestrel/timeout": "^0.0.1"
 	},
 	"devDependencies": {
 		"@microsoft/api-extractor": "^7.58.9",
