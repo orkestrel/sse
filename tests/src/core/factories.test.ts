@@ -1,11 +1,9 @@
 import { createSSEParser } from '@src/core'
 import { describe, expect, it } from 'vitest'
 
-// The parser factories — createNDJSONParser returns a working NDJSONParserInterface,
-// createSSEParser a working SSEParserInterface, and createMarkdownParser a working
-// MarkdownParserInterface. Full buffering / malformed / never-terminated behavior lives
-// in NDJSONParser.test.ts and SSEParser.test.ts, the full AST + render behavior in
-// MarkdownParser.test.ts; here we assert each factory hands back a usable handle.
+// The parser factory — createSSEParser returns a working SSEParserInterface. Full
+// buffering / malformed / cross-chunk behavior lives in SSEParser.test.ts; here we
+// assert the factory hands back a usable, independent handle.
 
 describe('createSSEParser', () => {
 	it('returns a working SSEParserInterface (data line → event on its blank line)', () => {

@@ -24,9 +24,8 @@ import { BOM, NUL } from './constants.js'
  * - **Cross-chunk reassembly.** `parse(chunk)` appends `chunk` to an internal buffer,
  *   splits on the line terminator, processes every COMPLETE line, and retains the
  *   trailing partial line (and any in-progress event) for the next call - so an event
- *   split across chunk boundaries is reassembled once its blank line arrives, exactly
- *   like a partial line in {@link NDJSONParserInterface}. An un-terminated final event stays
- *   buffered and is never emitted until its blank line.
+ *   split across chunk boundaries is reassembled once its blank line arrives. An
+ *   un-terminated final event stays buffered and is never emitted until its blank line.
  * - **Line endings + BOM.** `\r\n`, `\r`, and `\n` are all valid terminators and are
  *   normalized; a CRLF split across two chunks is held safely (a trailing `\r` is
  *   retained, not flushed as a line, until its `\n` is known). A leading byte-order mark
