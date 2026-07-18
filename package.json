@@ -1,6 +1,6 @@
 {
 	"name": "@orkestrel/sse",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"description": "A typed Server-Sent Events parser — incremental, spec-compliant parsing of event-stream chunks into typed events with data, event, id, and retry fields. Part of the @orkestrel line.",
 	"keywords": [
 		"event-stream",
@@ -65,7 +65,7 @@
 	},
 	"devDependencies": {
 		"@microsoft/api-extractor": "^7.58.11",
-		"@orkestrel/guide": "^0.0.2",
+		"@orkestrel/guide": "^0.0.5",
 		"@types/node": "^26.1.1",
 		"oxfmt": "^0.59.0",
 		"oxlint": "^1.74.0",
