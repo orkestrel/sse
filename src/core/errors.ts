@@ -26,7 +26,7 @@ export class SSEError extends Error {
 		super(message)
 		this.name = 'SSEError'
 		this.code = code
-		this.context = context
+		if (context !== undefined) this.context = context
 	}
 }
 
