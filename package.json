@@ -1,6 +1,6 @@
 {
 	"name": "@orkestrel/sse",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"description": "A typed Server-Sent Events parser — incremental, spec-compliant parsing of event-stream chunks into typed events with data, event, id, and retry fields. Part of the @orkestrel line.",
 	"keywords": [
 		"event-stream",
