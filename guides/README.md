@@ -6,20 +6,20 @@ A dual-axis index into this repository's guides — by concept, and by directory
 
 | Concept | Spec                       | Source                    | Tests                                 |
 | ------- | -------------------------- | ------------------------- | ------------------------------------- |
-| SSE     | [`src/sse.md`](src/sse.md) | [`src/core`](../src/core) | [`tests/src/core`](../tests/src/core) |
+| SSE     | [`sse.md`](sse.md) | [`src/core`](../src/core) | [`tests/src/core`](../tests/src/core) |
 
 ## By directory
 
 | Directory  | Guide                      |
 | ---------- | -------------------------- |
-| `src/core` | [`src/sse.md`](src/sse.md) |
+| `src/core` | [`sse.md`](sse.md) |
 
 ## Dependency reference
 
 `@orkestrel/sse` is a **core-only** package with zero `@orkestrel/*` runtime
 dependencies — it has no dependency-mirror guides to list here.
 
-[`src/guide.md`](src/guide.md) is a byte-identical mirror of the guide for
+[`guide.md`](guide.md) is a byte-identical mirror of the guide for
 `@orkestrel/guide` — the devDependency powering this repo's guides-parity
 test suite (`tests/guides.test.ts`). It documents **that
 package's** surface (`Guide` / `Source`, the manifest and comparison
