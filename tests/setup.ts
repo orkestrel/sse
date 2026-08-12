@@ -73,7 +73,7 @@ export function feedAll(parser: SSEParserInterface, chunks: readonly string[]): 
 export function chunkings(
 	stream: string,
 	sizes: readonly number[] = [1, 2, 3, 5, 7, 13, stream.length],
-): readonly (readonly string[])[] {
+): ReadonlyArray<readonly string[]> {
 	const result: string[][] = []
 	for (const size of sizes) {
 		const chunks: string[] = []

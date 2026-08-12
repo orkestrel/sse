@@ -447,7 +447,7 @@ describe('SSEParser — realistic streamed completion at arbitrary chunk boundar
 		{ data: '[DONE]', event: 'done', id: '9' },
 	]
 
-	const drain = (size: number): readonly { readonly data: string }[] => {
+	const drain = (size: number): ReadonlyArray<{ readonly data: string }> => {
 		const parser = new SSEParser()
 		const events = []
 		for (let index = 0; index < stream.length; index += size) {
@@ -1020,7 +1020,7 @@ describe('SSEParser — (G) property / invariant suites', () => {
 	})
 
 	it('G2 parse(a+b) === parse(a) then parse(b), for boundary pairs landing on CRLF/colon/BOM/blank-line', () => {
-		const pairs: readonly [string, string][] = [
+		const pairs: ReadonlyArray<[string, string]> = [
 			['data: x\r', '\ndata: y\n\n'],
 			['data', ': x\n\n'],
 			[BOM, 'data: z\n\n'],
