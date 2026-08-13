@@ -13,37 +13,6 @@ afterEach(() => {
 	vi.restoreAllMocks()
 })
 
-// ── Recorders (generic, environment-agnostic) ──────────────────────────────
-
-// A real callback that records its calls — use instead of a mock when a test
-// only needs to count invocations or inspect arguments.
-export interface TestRecorderInterface<TArgs extends readonly unknown[]> {
-	readonly calls: readonly TArgs[]
-	readonly count: number
-	readonly handler: (...args: TArgs) => void
-	clear(): void
-}
-
-export function createRecorder<
-	TArgs extends readonly unknown[] = readonly unknown[],
->(): TestRecorderInterface<TArgs> {
-	const calls: TArgs[] = []
-	return {
-		get calls() {
-			return calls
-		},
-		get count() {
-			return calls.length
-		},
-		handler: (...args: TArgs) => {
-			calls.push(args)
-		},
-		clear() {
-			calls.length = 0
-		},
-	}
-}
-
 // ── SSE line-terminator / whitespace constants (shared — AGENTS §16.1) ─────
 
 // Control bytes spelled as codepoints so the raw wire content is unambiguous
