@@ -59,24 +59,9 @@ export function chunkings(
 }
 
 /**
- * A hand-rolled, seeded 32-bit PRNG (mulberry32) — deterministic, no npm
- * dependency. Returns a generator function producing floats in `[0, 1)`.
- */
-export function mulberry32(seed: number): () => number {
-	let state = seed >>> 0
-	return () => {
-		state = (state + 0x6d2b79f5) >>> 0
-		let t = state
-		t = Math.imul(t ^ (t >>> 15), t | 1)
-		t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-		return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-	}
-}
-
-/**
  * Split `stream` into a random sequence of non-empty chunks driven by `rng`
- * (e.g. {@link mulberry32}) — every call consumes at least one character, so
- * it always terminates.
+ * (e.g. {@link seededRandom} from `@orkestrel/contract`) — every call
+ * consumes at least one character, so it always terminates.
  */
 export function partition(stream: string, rng: () => number): readonly string[] {
 	const chunks: string[] = []
@@ -103,20 +88,4 @@ export function buildRepeated(block: string, n: number): string {
 export function expectSSEError(value: unknown): SSEError {
 	if (!isSSEError(value)) throw new Error('expected value to be an SSEError')
 	return value
-}
-
-/**
- * Narrow a possibly-`undefined` value to `T`, throwing (not `expect`ing) when
- * it is `undefined` — lets a caller assert on the value unconditionally
- * afterward instead of nesting `expect` inside an `if` (vitest/no-conditional-expect).
- */
-export function expectDefined<T>(value: T | undefined): T {
-	if (value === undefined) throw new Error('expected value to be defined')
-	return value
-}
-
-/** Whether a repository-relative Vue SFC path belongs to the private browser application. */
-export function isBrowserVuePath(path: string): boolean {
-	const normalized = path.replaceAll('\\', '/')
-	return normalized.startsWith('app/browser/')
 }

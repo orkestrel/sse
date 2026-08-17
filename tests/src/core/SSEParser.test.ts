@@ -1,4 +1,6 @@
 import { BOM, NUL, SSEParser, createSSEParser, isSSEError } from '@src/core'
+import { seededRandom } from '@orkestrel/contract'
+import { requireValue } from '@orkestrel/test'
 import { describe, expect, it } from 'vitest'
 import {
 	CR,
@@ -6,10 +8,8 @@ import {
 	TAB,
 	buildRepeated,
 	chunkings,
-	expectDefined,
 	expectSSEError,
 	feedAll,
-	mulberry32,
 	partition,
 } from '../../setup.js'
 
@@ -729,7 +729,7 @@ describe('SSEParser — (D) adversarial & malformed', () => {
 
 		const second = new SSEParser().parse('id: __proto__\ndata: z\n\n')
 		expect(second).toEqual([{ data: 'z', id: '__proto__' }])
-		const event = expectDefined(second[0])
+		const event = requireValue(second[0])
 		expect(Object.getPrototypeOf(event)).toBe(Object.prototype)
 	})
 
@@ -1035,7 +1035,7 @@ describe('SSEParser — (G) property / invariant suites', () => {
 	})
 
 	it('G3 25 seeded-fuzz random partitions of the corpus all match the whole-string parse', () => {
-		const rng = mulberry32(0xc0ffee)
+		const rng = seededRandom(0xc0ffee)
 
 		for (let trial = 0; trial < 25; trial += 1) {
 			const chunks = partition(CORPUS, rng)
