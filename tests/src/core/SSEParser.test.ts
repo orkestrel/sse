@@ -299,8 +299,9 @@ describe('SSEParser — BOM stripping', () => {
 	it('strips a BOM that precedes the first field name only', () => {
 		const parser = new SSEParser()
 
-		// Without stripping, the field would be `﻿event` (unknown) and the event
-		// type would be lost; with stripping, `event: a` is recognized.
+		// Without stripping, the BOM joins the field name, which then reads as an
+		// unknown field and loses the event type; with stripping, `event: a` is
+		// recognized.
 		expect(parser.parse(BOM + 'event: a\ndata: x\n\n')).toEqual([{ data: 'x', event: 'a' }])
 	})
 
@@ -308,9 +309,9 @@ describe('SSEParser — BOM stripping', () => {
 		const parser = new SSEParser()
 
 		expect(parser.parse('data: x\n\n')).toEqual([{ data: 'x' }])
-		// A BOM at the head of a SECOND chunk is ordinary content — a no-colon line
-		// `﻿data` is an unknown field, not a stripped marker, so this event has no
-		// recognized data and does not emit.
+		// A BOM at the head of a SECOND chunk is ordinary content — the no-colon
+		// line's field name carries the BOM, so it is an unknown field rather than a
+		// stripped marker, this event has no recognized data, and it does not emit.
 		expect(parser.parse(BOM + 'data\n\n')).toEqual([])
 	})
 
