@@ -76,7 +76,7 @@ export interface SSEParserInterface {
 	 * @returns The dispatched event as a single-element array, or `[]` when there was
 	 * nothing to dispatch.
 	 */
-	flush(): SSEEvent[]
+	flush(): readonly SSEEvent[]
 	/** The persisted last-event-id (WHATWG last-event-id): set by each valid `id:`
 	 * field and NOT cleared when an event dispatches; `undefined` until the first
 	 * valid `id:` field arrives, or after `reset()`. */

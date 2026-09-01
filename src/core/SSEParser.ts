@@ -132,7 +132,7 @@ export class SSEParser implements SSEParserInterface {
 		return events
 	}
 
-	flush(): SSEEvent[] {
+	flush(): readonly SSEEvent[] {
 		const events: SSEEvent[] = []
 		if (this.#buffer.length > 0) {
 			const line = this.#buffer

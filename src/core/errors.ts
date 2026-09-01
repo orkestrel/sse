@@ -17,11 +17,33 @@ import type { SSEErrorCode } from './types.js'
  * chunk is not appended - so a consumer may `reset()` and continue. `context`
  * carries at least `{ limit, size }`: the configured limit and the size the
  * buffer would have reached.
+ *
+ * @example
+ * ```ts
+ * import { isSSEError, SSEParser } from '@src/core'
+ *
+ * const parser = new SSEParser({ limit: 10 })
+ * try {
+ * 	parser.parse('x'.repeat(20))
+ * } catch (error) {
+ * 	if (isSSEError(error) && error.code === 'OVERFLOW') {
+ * 		error.context // { limit: 10, size: 20 }
+ * 		parser.reset()
+ * 	}
+ * }
+ * ```
  */
 export class SSEError extends Error {
 	readonly code: SSEErrorCode
 	readonly context?: Readonly<Record<string, unknown>>
 
+	/**
+	 * Creates an SSE error carrying a machine-readable code.
+	 *
+	 * @param code - The machine-readable {@link import('./types.js').SSEErrorCode} a `catch` branches on
+	 * @param message - The human-readable description, carried as the `Error` message
+	 * @param context - Extra diagnostic detail; omitted leaves `context` `undefined`. An `'OVERFLOW'` carries at least `{ limit, size }`
+	 */
 	constructor(code: SSEErrorCode, message: string, context?: Readonly<Record<string, unknown>>) {
 		super(message)
 		this.name = 'SSEError'
