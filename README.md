@@ -61,7 +61,7 @@ discarded per spec — call `flush()` at end-of-stream to force it out.
 
 For the full surface — the `SSEParser` class, its `SSEEvent` shape, the wire
 format it implements, and the `createSSEParser` factory — see
-[`guides/src/sse.md`](guides/src/sse.md).
+[`guides/sse.md`](guides/sse.md).
 
 ## Package
 
