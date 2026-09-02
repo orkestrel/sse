@@ -3,7 +3,7 @@ import { BOM, NUL } from './constants.js'
 import { SSEError } from './errors.js'
 
 /**
- * A stateful Server-Sent-Events (SSE) stream parser - feed it string chunks, get
+ * Represents a stateful Server-Sent-Events (SSE) stream parser - feed it string chunks, get
  * back the complete events dispatched so far.
  *
  * @remarks

@@ -7,7 +7,7 @@ import type { SSEErrorCode } from './types.js'
 // throws.
 
 /**
- * An error thrown by the SSE parser.
+ * Represents an error thrown by the SSE parser.
  *
  * @remarks
  * Thrown for: a `parse(chunk)` call whose resulting buffered total (un-consumed
@@ -56,7 +56,7 @@ export class SSEError extends Error {
  * Narrows an unknown caught value to an {@link SSEError}.
  *
  * @param value - The value to test (typically a `catch` binding)
- * @returns `true` when `value` is an {@link SSEError}
+ * @returns True if `value` is an {@link SSEError}; false otherwise
  *
  * @example
  * ```ts

@@ -1,5 +1,5 @@
 /**
- * One dispatched Server-Sent Event - the value a blank line flushes from an
+ * Represents one dispatched Server-Sent Event - the value a blank line flushes from an
  * {@link SSEParserInterface}.
  *
  * @remarks
@@ -15,18 +15,18 @@
  *   field's value was an integer (a non-integer `retry:` is ignored).
  */
 export interface SSEEvent {
-	/** The event's concatenated data - each `data:` field joined by `\n`, no trailing newline. */
+	/** Holds the event's concatenated data - each `data:` field joined by `\n`, no trailing newline. */
 	readonly data: string
-	/** The event type - the last `event:` field's value, if any. */
+	/** Holds the event type - the last `event:` field's value, if any. */
 	readonly event?: string
-	/** The last-event-id - the last `id:` field's value, if any. */
+	/** Holds the last-event-id - the last `id:` field's value, if any. */
 	readonly id?: string
-	/** The reconnection time in ms - the `retry:` field, present only when it was an integer. */
+	/** Holds the reconnection time in ms - the `retry:` field, present only when it was an integer. */
 	readonly retry?: number
 }
 
 /**
- * Machine-readable codes carried by an {@link import('./errors.js').SSEError}.
+ * Names the machine-readable codes carried by an {@link import('./errors.js').SSEError}.
  *
  * @remarks
  * `'OVERFLOW'` - a `parse(chunk)` call would push the buffered total over a
@@ -35,7 +35,7 @@ export interface SSEEvent {
 export type SSEErrorCode = 'OVERFLOW'
 
 /**
- * Options for {@link import('./factories.js').createSSEParser} / the
+ * Configures {@link import('./factories.js').createSSEParser} / the
  * {@link import('./SSEParser.js').SSEParser} constructor.
  *
  * @remarks
@@ -52,13 +52,13 @@ export interface SSEParserOptions {
 }
 
 /**
- * A stateful Server-Sent-Events (SSE) stream parser: feed it string chunks, get
+ * Represents a stateful Server-Sent-Events (SSE) stream parser: feed it string chunks, get
  * back the complete events dispatched so far. A trailing partial line / in-progress
  * event is buffered until the rest arrives.
  */
 export interface SSEParserInterface {
 	/**
-	 * Append `chunk`, then return every event a blank line has DISPATCHED (its `data:`
+	 * Appends `chunk`, then returns every event a blank line has DISPATCHED (its `data:`
 	 * fields concatenated with `\n`, plus the last `event:` / `id:` / `retry:`); an
 	 * in-progress event and a trailing partial line are retained for the next call.
 	 *
@@ -67,8 +67,8 @@ export interface SSEParserInterface {
 	 */
 	parse(chunk: string): readonly SSEEvent[]
 	/**
-	 * Treat any remaining buffered partial line as if it had been terminated, then
-	 * dispatch the in-progress event if its data buffer is non-empty. A convenience
+	 * Treats any remaining buffered partial line as if it had been terminated, then
+	 * dispatches the in-progress event if its data buffer is non-empty. A convenience
 	 * beyond the WHATWG algorithm, which discards an unterminated final event at EOF
 	 * - without calling `flush()`, that spec-faithful discard is this parser's
 	 * default behavior.
@@ -77,11 +77,11 @@ export interface SSEParserInterface {
 	 * nothing to dispatch.
 	 */
 	flush(): readonly SSEEvent[]
-	/** The persisted last-event-id (WHATWG last-event-id): set by each valid `id:`
+	/** Holds the persisted last-event-id (WHATWG last-event-id): set by each valid `id:`
 	 * field and NOT cleared when an event dispatches; `undefined` until the first
 	 * valid `id:` field arrives, or after `clear()`. */
 	readonly id: string | undefined
-	/** The last valid `retry:` reconnection time seen, in ms; `undefined` until the
+	/** Holds the last valid `retry:` reconnection time seen, in ms; `undefined` until the
 	 * first valid `retry:` field arrives, or after `clear()`. */
 	readonly retry: number | undefined
 	/** Drops any buffered partial line, in-progress event, and persisted id/retry,
