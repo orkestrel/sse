@@ -79,12 +79,12 @@ export interface SSEParserInterface {
 	flush(): readonly SSEEvent[]
 	/** The persisted last-event-id (WHATWG last-event-id): set by each valid `id:`
 	 * field and NOT cleared when an event dispatches; `undefined` until the first
-	 * valid `id:` field arrives, or after `reset()`. */
+	 * valid `id:` field arrives, or after `clear()`. */
 	readonly id: string | undefined
 	/** The last valid `retry:` reconnection time seen, in ms; `undefined` until the
-	 * first valid `retry:` field arrives, or after `reset()`. */
+	 * first valid `retry:` field arrives, or after `clear()`. */
 	readonly retry: number | undefined
-	/** Drop any buffered partial line, in-progress event, and persisted id/retry -
-	 * reset for a fresh stream. */
-	reset(): void
+	/** Drops any buffered partial line, in-progress event, and persisted id/retry,
+	 * leaving the parser ready for a fresh stream. */
+	clear(): void
 }

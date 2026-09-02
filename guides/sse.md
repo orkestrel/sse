@@ -9,7 +9,7 @@
 > non-empty. A trailing partial line or in-progress event split across chunk
 > boundaries is buffered until the rest arrives. The `id` / `retry` fields are
 > also persisted as sticky connection state (WHATWG last-event-id semantics) —
-> surfaced through the `id` / `retry` getters, cleared only by `reset()`. An
+> surfaced through the `id` / `retry` getters, dropped only by `clear()`. An
 > optional `limit` bounds total buffered characters, throwing a typed
 > `SSEError('OVERFLOW')` instead of growing unbounded; `flush()` forces out any
 > trailing unterminated event at end-of-stream. A pure functional primitive —
@@ -31,7 +31,7 @@ const parser = createSSEParser()
 parser.parse('data: a\ndata: b\n\n') // [{ data: 'a\nb' }] - the two data lines joined
 parser.parse('event: ping\ndata: 1') // [] - the event is buffered until its blank line
 parser.parse('\n\n') // [{ data: '1', event: 'ping' }]
-parser.reset() // drop any buffered partial line / event - ready for a fresh stream
+parser.clear() // drop any buffered partial line / event - ready for a fresh stream
 ```
 
 ### Types
@@ -39,7 +39,7 @@ parser.reset() // drop any buffered partial line / event - ready for a fresh str
 | Type                 | Kind      | Shape                                                                                                                         |
 | -------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `SSEEvent`           | interface | `{ data, event?, id?, retry? }` — one dispatched event; `data` is every `data:` field joined by `\n`, no trailing newline.    |
-| `SSEParserInterface` | interface | The stateful stream-parser contract — `parse` / `flush` / `reset` + the sticky `id` / `retry` getters.                        |
+| `SSEParserInterface` | interface | The stateful stream-parser contract — `parse` / `flush` / `clear` + the sticky `id` / `retry` getters.                        |
 | `SSEParserOptions`   | interface | `{ limit? }` — caps total buffered characters (un-consumed line buffer + in-progress event field lengths); unset → unbounded. |
 | `SSEErrorCode`       | type      | `'OVERFLOW'` — the sole `SSEError` code, thrown when a configured `limit` would be exceeded.                                  |
 
@@ -116,7 +116,7 @@ state) stay off the method table below and are documented afterward.
 | ------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `parse` | `readonly SSEEvent[]` | Append `chunk`, then return every event a blank line has dispatched so far; a trailing partial line / in-progress event is buffered for the next call. Throws `SSEError('OVERFLOW')` when a configured `limit` would be exceeded — state left unchanged. |
 | `flush` | `readonly SSEEvent[]` | Treat any remaining buffered partial line as terminated, then dispatch the in-progress event if its data buffer is non-empty. Returns a single-element array, or `[]` when nothing was pending.                                                          |
-| `reset` | `void`                | Drop any buffered partial line, in-progress event, and persisted `id` / `retry` — full reset for a fresh stream.                                                                                                                                         |
+| `clear` | `void`                | Drop any buffered partial line, in-progress event, and persisted `id` / `retry`, leaving the parser ready for a fresh stream.                                                                                                                            |
 
 ```ts
 import { SSEParser } from '@orkestrel/sse'
@@ -125,7 +125,7 @@ const parser = new SSEParser()
 parser.parse('data: a\ndata: b\n\n') // [{ data: 'a\nb' }] - the two data lines joined
 parser.parse('event: ping\ndata: 1') // [] - the event is buffered until its blank line
 parser.parse('\n\n') // [{ data: '1', event: 'ping' }]
-parser.reset() // drop any buffered partial line / event / persisted id/retry - ready for a fresh stream
+parser.clear() // drop any buffered partial line / event / persisted id/retry - ready for a fresh stream
 parser.parse('data: fresh\n\n') // [{ data: 'fresh' }]
 ```
 
@@ -143,7 +143,7 @@ parser.flush() // [{ data: 'incomplete' }] - forced out at end-of-stream
 
 `id` / `retry` are sticky connection state (WHATWG last-event-id semantics):
 each valid `id:` / `retry:` field updates them, dispatch does NOT clear them,
-and only `reset()` does — useful for reconnection (`Last-Event-ID` header):
+and only `clear()` does — useful for reconnection (`Last-Event-ID` header):
 
 ```ts
 import { SSEParser } from '@orkestrel/sse'
@@ -153,8 +153,8 @@ parser.id // undefined - no id: field seen yet
 parser.parse('id: 42\nretry: 3000\ndata: x\n\n') // [{ data: 'x', id: '42', retry: 3000 }]
 parser.id // '42' - persisted, survives dispatch
 parser.retry // 3000 - persisted, survives dispatch
-parser.reset()
-parser.id // undefined - reset() clears sticky state
+parser.clear()
+parser.id // undefined - clear() drops sticky state
 ```
 
 A configured `limit` throws a typed `SSEError` instead of growing the buffer
@@ -167,6 +167,6 @@ const parser = new SSEParser({ limit: 10 })
 try {
 	parser.parse('x'.repeat(20))
 } catch (error) {
-	if (isSSEError(error) && error.code === 'OVERFLOW') parser.reset()
+	if (isSSEError(error) && error.code === 'OVERFLOW') parser.clear()
 }
 ```

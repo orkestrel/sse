@@ -20,11 +20,11 @@ describe('createSSEParser', () => {
 		expect(parser.parse('lo\n\n')).toEqual([{ data: 'hello' }])
 	})
 
-	it('clears the buffer on reset', () => {
+	it('clears the buffer', () => {
 		const parser = createSSEParser()
 
 		expect(parser.parse('data: partial\n')).toEqual([])
-		parser.reset()
+		parser.clear()
 
 		expect(parser.parse('data: fresh\n\n')).toEqual([{ data: 'fresh' }])
 	})

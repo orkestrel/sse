@@ -2,7 +2,7 @@ import type { SSEParserInterface, SSEParserOptions } from './types.js'
 import { SSEParser } from './SSEParser.js'
 
 /**
- * Create a Server-Sent-Events (SSE) stream parser - a stateful handle that turns
+ * Creates a Server-Sent-Events (SSE) stream parser - a stateful handle that turns
  * string chunks into the complete events dispatched so far.
  *
  * @param options - See {@link SSEParserOptions}.
@@ -14,7 +14,7 @@ import { SSEParser } from './SSEParser.js'
  * `retry:`), and an in-progress event split across chunk boundaries is buffered until
  * its blank line arrives (or `flush()` forces it out at end-of-stream). The `id` /
  * `retry` getters expose the persisted last-event-id / reconnection time, which
- * survive dispatch and only clear on `reset()`. Generic and event-free - no
+ * survive dispatch and are dropped only by `clear()`. Generic and event-free - no
  * server / agent coupling; never throws on malformed input, only on a configured
  * `limit` being exceeded (an {@link import('./errors.js').SSEError} with code
  * `'OVERFLOW'`). Pair it with a `TextDecoder({ stream: true })` to also handle
@@ -33,7 +33,7 @@ import { SSEParser } from './SSEParser.js'
  * try {
  * 	parser.parse('x'.repeat(2_000_000))
  * } catch (error) {
- * 	if (isSSEError(error) && error.code === 'OVERFLOW') parser.reset()
+ * 	if (isSSEError(error) && error.code === 'OVERFLOW') parser.clear()
  * }
  * ```
  */

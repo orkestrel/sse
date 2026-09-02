@@ -145,7 +145,7 @@ describe('SSEParser — blank-line dispatch and multiple events', () => {
 		expect(parser.parse('data: 1\n\ndata: 2\n\n')).toEqual([{ data: '1' }, { data: '2' }])
 	})
 
-	it('resets the accumulator between events (event type does not bleed across)', () => {
+	it('clears the accumulator between events (event type does not bleed across)', () => {
 		const parser = new SSEParser()
 
 		// The first event carries `event: a`; the second, with no event field, must not
@@ -389,13 +389,13 @@ describe('SSEParser — buffered final event (no trailing blank line)', () => {
 	})
 })
 
-describe('SSEParser — reset', () => {
+describe('SSEParser — clear', () => {
 	it('drops a buffered partial event so a later parse starts fresh', () => {
 		const parser = new SSEParser()
 
-		// Accumulate a data line (no blank line yet), then reset before it dispatches.
+		// Accumulate a data line (no blank line yet), then clear before it dispatches.
 		expect(parser.parse('data: gone\n')).toEqual([])
-		parser.reset()
+		parser.clear()
 
 		// The old data is discarded — a fresh event dispatches without it.
 		expect(parser.parse('data: fresh\n\n')).toEqual([{ data: 'fresh' }])
@@ -405,26 +405,26 @@ describe('SSEParser — reset', () => {
 		const parser = new SSEParser()
 
 		expect(parser.parse('data: par')).toEqual([])
-		parser.reset()
+		parser.clear()
 
 		// The partial `data: par` line is gone; the tail is now its own fresh stream.
 		expect(parser.parse('data: x\n\n')).toEqual([{ data: 'x' }])
 	})
 
-	it('re-arms BOM stripping after reset (next parse is a fresh first chunk)', () => {
+	it('re-arms BOM stripping after clear (next parse is a fresh first chunk)', () => {
 		const parser = new SSEParser()
 
 		expect(parser.parse(BOM + 'data: a\n\n')).toEqual([{ data: 'a' }])
-		parser.reset()
-		// After reset the next chunk is again a "first chunk" — its leading BOM strips.
+		parser.clear()
+		// After clear() the next chunk is again a "first chunk" — its leading BOM strips.
 		expect(parser.parse(BOM + 'data: b\n\n')).toEqual([{ data: 'b' }])
 	})
 
 	it('is a safe no-op on an empty buffer', () => {
 		const parser = new SSEParser()
 
-		parser.reset()
-		parser.reset()
+		parser.clear()
+		parser.clear()
 
 		expect(parser.parse('data: x\n\n')).toEqual([{ data: 'x' }])
 	})
@@ -509,7 +509,7 @@ describe('SSEParser — (A) spec conformance', () => {
 		expect(parser.parse('data:second event\nid\n\n')).toEqual([{ data: 'second event', id: '' }])
 	})
 
-	it('A2 sticky last-event-id getter persists across dispatches, updates, and reset', () => {
+	it('A2 sticky last-event-id getter persists across dispatches, updates, and clear', () => {
 		const parser = new SSEParser()
 
 		expect(parser.parse('id: 1\ndata: a\n\ndata: b\n\n')).toEqual([
@@ -526,7 +526,7 @@ describe('SSEParser — (A) spec conformance', () => {
 		expect(parser.parse('id: 2\ndata: d\n\n')).toEqual([{ data: 'd', id: '2' }])
 		expect(parser.id).toBe('2')
 
-		parser.reset()
+		parser.clear()
 		expect(parser.id).toBeUndefined()
 	})
 
@@ -538,7 +538,7 @@ describe('SSEParser — (A) spec conformance', () => {
 		expect(parser.id).toBe('1')
 	})
 
-	it('A2c sticky retry getter persists, ignores invalid retry, and clears on reset', () => {
+	it('A2c sticky retry getter persists, ignores invalid retry, and is dropped by clear', () => {
 		const parser = new SSEParser()
 
 		expect(parser.parse('retry: 100\ndata: a\n\ndata: b\n\n')).toEqual([
@@ -550,7 +550,7 @@ describe('SSEParser — (A) spec conformance', () => {
 		expect(parser.parse('retry: x\ndata: c\n\n')).toEqual([{ data: 'c' }])
 		expect(parser.retry).toBe(100)
 
-		parser.reset()
+		parser.clear()
 		expect(parser.retry).toBeUndefined()
 	})
 
@@ -845,7 +845,7 @@ describe('SSEParser — (E) limits & volume (CI-fast, deterministic)', () => {
 			expect(() => overLimit.parse('123456')).toThrow(/exceed the configured limit/)
 		})
 
-		it('(d) the throwing call leaves prior state intact and reset() makes the parser reusable', () => {
+		it('(d) the throwing call leaves prior state intact and clear() makes the parser reusable', () => {
 			const parser = createSSEParser({ limit: 20 })
 
 			expect(parser.parse('data: ab\n')).toEqual([])
@@ -863,7 +863,7 @@ describe('SSEParser — (E) limits & volume (CI-fast, deterministic)', () => {
 			// The offending chunk was not appended — the prior 'ab' data is intact.
 			expect(parser.parse('\n\n')).toEqual([{ data: 'ab' }])
 
-			parser.reset()
+			parser.clear()
 			expect(parser.parse('data: fresh\n\n')).toEqual([{ data: 'fresh' }])
 		})
 
@@ -943,14 +943,14 @@ describe('SSEParser — (E) limits & volume (CI-fast, deterministic)', () => {
 })
 
 describe('SSEParser — (F) API contract', () => {
-	it('F3 reset() mid-CRLF clears the carriage hold — a following \\n is a fresh blank line', () => {
+	it('F3 clear() mid-CRLF drops the carriage hold — a following \\n is a fresh blank line', () => {
 		const parser = new SSEParser()
 
 		expect(parser.parse('data: x\r')).toEqual([])
-		parser.reset()
+		parser.clear()
 
-		// After reset, the leading '\n' is NOT swallowed as the second half of the
-		// pre-reset CRLF — it is read as a fresh (no-op) blank line, then normal
+		// After clear(), the leading '\n' is NOT swallowed as the second half of the
+		// pre-clear CRLF — it is read as a fresh (no-op) blank line, then normal
 		// parsing resumes.
 		expect(parser.parse('\ndata: y\n\n')).toEqual([{ data: 'y' }])
 	})

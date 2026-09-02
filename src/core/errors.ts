@@ -14,7 +14,7 @@ import type { SSEErrorCode } from './types.js'
  * line buffer + accumulated per-event field lengths + the incoming chunk) would
  * exceed a configured {@link import('./types.js').SSEParserOptions.limit}
  * (`OVERFLOW`). The parser's state is left UNCHANGED by the throwing call - the
- * chunk is not appended - so a consumer may `reset()` and continue. `context`
+ * chunk is not appended - so a consumer may `clear()` and continue. `context`
  * carries at least `{ limit, size }`: the configured limit and the size the
  * buffer would have reached.
  *
@@ -28,7 +28,7 @@ import type { SSEErrorCode } from './types.js'
  * } catch (error) {
  * 	if (isSSEError(error) && error.code === 'OVERFLOW') {
  * 		error.context // { limit: 10, size: 20 }
- * 		parser.reset()
+ * 		parser.clear()
  * 	}
  * }
  * ```
@@ -53,7 +53,7 @@ export class SSEError extends Error {
 }
 
 /**
- * Narrow an unknown caught value to an {@link SSEError}.
+ * Narrows an unknown caught value to an {@link SSEError}.
  *
  * @param value - The value to test (typically a `catch` binding)
  * @returns `true` when `value` is an {@link SSEError}
@@ -65,7 +65,7 @@ export class SSEError extends Error {
  * try {
  * 	parser.parse(chunk)
  * } catch (error) {
- * 	if (isSSEError(error) && error.code === 'OVERFLOW') parser.reset()
+ * 	if (isSSEError(error) && error.code === 'OVERFLOW') parser.clear()
  * }
  * ```
  */

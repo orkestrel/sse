@@ -19,14 +19,14 @@ import { SSEError } from './errors.js'
  * - **Blank-line dispatch.** A blank line flushes the accumulated event: an
  *   {@link SSEEvent} is emitted ONLY when the data buffer is non-empty (a dispatch with
  *   an empty data buffer emits nothing - a comment-only or field-only "event" produces
- *   no event), and the data buffer + event type reset for the next event afterwards.
+ *   no event), and the data buffer + event type are cleared for the next event afterwards.
  *   `id` / `retry` ride on the emitted event for the consumer to track per-event - the
  *   emitted event's shape is unchanged - AND are separately persisted as connection
  *   state, exposed via the sticky `id` / `retry` getters (see below).
  * - **Sticky connection state.** Each valid `id:` field updates a persisted
  *   last-event-id, exposed via the `id` getter; each valid `retry:` field updates a
  *   persisted reconnection time, exposed via the `retry` getter. Neither is cleared
- *   when an event dispatches - only `reset()` clears them - matching WHATWG
+ *   when an event dispatches - only `clear()` drops them - matching WHATWG
  *   last-event-id semantics. A NUL-voided `id` field does not alter the persisted
  *   value.
  * - **Cross-chunk reassembly.** `parse(chunk)` appends `chunk` to an internal buffer,
@@ -67,7 +67,7 @@ export class SSEParser implements SSEParserInterface {
 	// Read cursor into `#buffer` for the current `parse()` call - lines are consumed
 	// by advancing this offset, never by front-slicing `#buffer` per line. The
 	// invariant `#offset === 0` holds BETWEEN calls: `parse()` compacts `#buffer` to
-	// its unconsumed tail (and resets `#offset` to 0) once, at the end of the call.
+	// its unconsumed tail (and rewinds `#offset` to 0) once, at the end of the call.
 	#offset = 0
 	#started = false
 	// True when the last consumed line was terminated by a `\r`: a `\n` arriving next
@@ -75,14 +75,14 @@ export class SSEParser implements SSEParserInterface {
 	// fresh blank line. This lets a bare-`\r` terminator flush immediately AND keeps a
 	// CRLF straddling a chunk boundary as one terminator.
 	#carriage = false
-	// The in-progress event accumulator, reset after each blank-line dispatch.
+	// The in-progress event accumulator, cleared after each blank-line dispatch.
 	#data: string[] = []
 	#event: string | undefined = undefined
 	#id: string | undefined = undefined
 	#retry: number | undefined = undefined
 	// Persisted connection state (WHATWG last-event-id / reconnection time) - updated
-	// by every valid `id:` / `retry:` field, never cleared on dispatch; only `reset()`
-	// clears them.
+	// by every valid `id:` / `retry:` field, never cleared on dispatch; only `clear()`
+	// drops them.
 	#lastId: string | undefined = undefined
 	#lastRetry: number | undefined = undefined
 
@@ -124,7 +124,7 @@ export class SSEParser implements SSEParserInterface {
 			if (line === undefined) break
 			this.#process(line, events)
 		}
-		// Compact once per call: drop the consumed prefix and reset the cursor.
+		// Compact once per call: drop the consumed prefix and rewind the cursor.
 		if (this.#offset > 0) {
 			this.#buffer = this.#buffer.slice(this.#offset)
 			this.#offset = 0
@@ -144,7 +144,7 @@ export class SSEParser implements SSEParserInterface {
 		return events
 	}
 
-	reset(): void {
+	clear(): void {
 		this.#buffer = ''
 		this.#offset = 0
 		this.#started = false
@@ -231,7 +231,7 @@ export class SSEParser implements SSEParserInterface {
 	}
 
 	// Dispatch the accumulated event on a blank line (or on `flush()`): emit ONLY when
-	// data was buffered (the spec's empty-data rule), then reset the accumulator for
+	// data was buffered (the spec's empty-data rule), then clear the accumulator for
 	// the next event. Persisted `id` / `retry` state is untouched.
 	#dispatch(events: SSEEvent[]): void {
 		if (this.#data.length > 0) {
@@ -246,7 +246,7 @@ export class SSEParser implements SSEParserInterface {
 		this.#clear()
 	}
 
-	// Reset the in-progress event accumulator (data buffer + last-seen fields).
+	// Clear the in-progress event accumulator (data buffer + last-seen fields).
 	#clear(): void {
 		this.#data = []
 		this.#event = undefined

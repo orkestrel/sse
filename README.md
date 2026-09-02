@@ -40,11 +40,11 @@ parser.retry // undefined - sticky reconnection time, until a retry: field arriv
 try {
 	parser.parse('x'.repeat(2_000_000))
 } catch (error) {
-	if (isSSEError(error) && error.code === 'OVERFLOW') parser.reset()
+	if (isSSEError(error) && error.code === 'OVERFLOW') parser.clear()
 }
 
 parser.flush() // force out a trailing unterminated event at end-of-stream
-parser.reset() // full reset - drops buffered state and sticky id/retry
+parser.clear() // drops buffered state and sticky id/retry
 ```
 
 Pair it with a `TextDecoder({ stream: true })` when reading a byte stream so
