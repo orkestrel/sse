@@ -1,9 +1,9 @@
 import type { SSEErrorCode } from './types.js'
 
-// .claude/rules/typescript.md, Errors and outcomes: a configured `limit` exceeded by a `parse(chunk)` call `throw`s an
-// `SSEError` carrying a machine-readable `code`, so a `catch` branches on `error.code`
-// instead of parsing the message. Every other malformed-input case (a bad `retry`, a
-// NUL-voided `id`, an unknown field) is ignored per the WHATWG SSE algorithm and never
+// .claude/rules/typescript.md, Errors and outcomes: a configured `limit` exceeded by a
+// `parse(chunk)` call `throw`s an `SSEError` carrying a machine-readable `code`, so a `catch`
+// branches on `error.code` instead of parsing the message. Every other malformed-input case (a bad
+// `retry`, a NUL-voided `id`, an unknown field) is ignored per the WHATWG SSE algorithm and never
 // throws.
 
 /**

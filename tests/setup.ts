@@ -2,7 +2,8 @@
 // Vitest project (`setupFiles[0]`). Keep this file free of `node:*` and of
 // `document` / `window`: this package is core-only.
 //
-// SSE corpus helpers shared by this workspace's suites: the wire constants and the chunk-partitioning leaves.
+// SSE corpus helpers shared by this workspace's suites: the wire constants and the
+// chunk-partitioning leaves.
 
 import type { SSEError, SSEEvent, SSEParserInterface } from '@src/core'
 import { isSSEError } from '@src/core'

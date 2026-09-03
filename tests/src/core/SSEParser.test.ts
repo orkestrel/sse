@@ -719,6 +719,7 @@ describe('SSEParser — (D) adversarial & malformed', () => {
 		const first = new SSEParser().parse('__proto__: x\ndata: y\n\n')
 		expect(first).toEqual([{ data: 'y' }])
 		expect(Object.getPrototypeOf(requireValue(first[0]))).toBe(Object.prototype)
+		expect(Object.hasOwn(requireValue(first[0]), '__proto__')).toBe(false)
 
 		const second = new SSEParser().parse('id: __proto__\ndata: z\n\n')
 		expect(second).toEqual([{ data: 'z', id: '__proto__' }])

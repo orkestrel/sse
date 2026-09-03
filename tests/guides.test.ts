@@ -1,6 +1,8 @@
 // The consumer-side guides-parity drop-in: runs `@orkestrel/guide`'s checks against
-// this repo's own `guides/README.md` manifest. The following constants are this
-// package's own, and are the only part a sibling package changes.
+// this repo's own `guides/README.md` manifest, then executes this package's flagship
+// fences. The following constants, the `@src/core` and `./setup.js` imports the
+// executed cases use, and the `flagship fences` block are this package's own, and are
+// the parts a sibling package changes.
 
 import { describe, expect, it } from 'vitest'
 import {
@@ -178,9 +180,9 @@ for (const entry of manifest) {
 // guide text or from the barrel — and a name that resolves proves nothing about the
 // sentence beside it, so a fence whose comment claims a value the code contradicts
 // passes all of them. The cases here run each flagship fence and assert the values
-// its comments claim, each paired with a presence guard proving the transcribed
-// lines are still the documented ones. Change a fence, change the transcription
-// beside it.
+// its comments claim, each paired with a presence guard binding that fence's whole
+// body, so a line one fence shares with another cannot stand in for it. Change a
+// fence, change the transcription beside it.
 describe('flagship fences', () => {
 	const guideText = requireValue(files[CORE_GUIDE], `Missing file: ${CORE_GUIDE}`)
 	const readmeText = readFileSync(new URL('README.md', root), 'utf8')
@@ -197,14 +199,9 @@ describe('flagship fences', () => {
 	})
 
 	it('carries the Surface fence lines the transcription copies', () => {
-		expect(guideText).toContain('const parser = createSSEParser()')
 		expect(guideText).toContain(
-			"parser.parse('data: a\\ndata: b\\n\\n') // [{ data: 'a\\nb' }] - the two data lines joined",
+			"const parser = createSSEParser()\nparser.parse('data: a\\ndata: b\\n\\n') // [{ data: 'a\\nb' }] - the two data lines joined\nparser.parse('event: ping\\ndata: 1') // [] - the event is buffered until its blank line\nparser.parse('\\n\\n') // [{ data: '1', event: 'ping' }]\nparser.clear() // drop any buffered partial line / event - ready for a fresh stream",
 		)
-		expect(guideText).toContain(
-			"parser.parse('event: ping\\ndata: 1') // [] - the event is buffered until its blank line",
-		)
-		expect(guideText).toContain("parser.parse('\\n\\n') // [{ data: '1', event: 'ping' }]")
 	})
 
 	it('reads the codepoints the Constants fence claims', () => {
@@ -213,8 +210,7 @@ describe('flagship fences', () => {
 	})
 
 	it('carries the Constants fence lines the transcription copies', () => {
-		expect(guideText).toContain('NUL.charCodeAt(0) // 0')
-		expect(guideText).toContain('BOM.charCodeAt(0) // 0xfeff')
+		expect(guideText).toContain('NUL.charCodeAt(0) // 0\nBOM.charCodeAt(0) // 0xfeff')
 	})
 
 	it('narrows the Errors fence throw to its OVERFLOW code', () => {
@@ -231,9 +227,8 @@ describe('flagship fences', () => {
 
 	it('carries the Errors fence lines the transcription copies', () => {
 		expect(guideText).toContain(
-			"throw new SSEError('OVERFLOW', 'SSE parser buffer would exceed the configured limit', {",
+			"try {\n\tthrow new SSEError('OVERFLOW', 'SSE parser buffer would exceed the configured limit', {\n\t\tlimit: 100,\n\t\tsize: 150,\n\t})\n} catch (error) {\n\tif (isSSEError(error)) error.code // 'OVERFLOW'\n}",
 		)
-		expect(guideText).toContain("if (isSSEError(error)) error.code // 'OVERFLOW'")
 	})
 
 	it('returns the Factories fence values from a parser built with a limit', () => {
@@ -245,9 +240,8 @@ describe('flagship fences', () => {
 	})
 
 	it('carries the Factories fence lines the transcription copies', () => {
-		expect(guideText).toContain('const parser = createSSEParser({ limit: 1_000_000 })')
 		expect(guideText).toContain(
-			"parser.parse('event: ping\\ndata: 1') // [] - buffered until its blank line",
+			"const parser = createSSEParser({ limit: 1_000_000 })\nparser.parse('data: a\\ndata: b\\n\\n') // [{ data: 'a\\nb' }] - the two data lines joined\nparser.parse('event: ping\\ndata: 1') // [] - buffered until its blank line\nparser.parse('\\n\\n') // [{ data: '1', event: 'ping' }]",
 		)
 	})
 
@@ -257,14 +251,19 @@ describe('flagship fences', () => {
 		expect(parser.parse('data: a\ndata: b\n\n')).toEqual([{ data: 'a\nb' }])
 		expect(parser.parse('event: ping\ndata: 1')).toEqual([])
 		expect(parser.parse('\n\n')).toEqual([{ data: '1', event: 'ping' }])
+		// The fence's `clear()` comment claims the persisted id/retry go with the buffer,
+		// so the sticky state is in place before the call that claims to drop it.
+		expect(parser.parse('id: 9\ndata: q\n\n')).toEqual([{ data: 'q', id: '9' }])
 		parser.clear()
 
+		expect(parser.id).toBeUndefined()
 		expect(parser.parse('data: fresh\n\n')).toEqual([{ data: 'fresh' }])
 	})
 
 	it('carries the Methods fence lines the transcription copies', () => {
-		expect(guideText).toContain('const parser = new SSEParser()')
-		expect(guideText).toContain("parser.parse('data: fresh\\n\\n') // [{ data: 'fresh' }]")
+		expect(guideText).toContain(
+			"const parser = new SSEParser()\nparser.parse('data: a\\ndata: b\\n\\n') // [{ data: 'a\\nb' }] - the two data lines joined\nparser.parse('event: ping\\ndata: 1') // [] - the event is buffered until its blank line\nparser.parse('\\n\\n') // [{ data: '1', event: 'ping' }]\nparser.clear() // drop any buffered partial line / event / persisted id/retry - ready for a fresh stream\nparser.parse('data: fresh\\n\\n') // [{ data: 'fresh' }]",
+		)
 	})
 
 	it('buffers the flush fence line, then forces it out at end-of-stream', () => {
@@ -276,10 +275,7 @@ describe('flagship fences', () => {
 
 	it('carries the flush fence lines the transcription copies', () => {
 		expect(guideText).toContain(
-			"parser.parse('data: incomplete') // [] - no blank line yet, buffered",
-		)
-		expect(guideText).toContain(
-			"parser.flush() // [{ data: 'incomplete' }] - forced out at end-of-stream",
+			"const parser = new SSEParser()\nparser.parse('data: incomplete') // [] - no blank line yet, buffered\nparser.flush() // [{ data: 'incomplete' }] - forced out at end-of-stream",
 		)
 	})
 
@@ -298,13 +294,9 @@ describe('flagship fences', () => {
 	})
 
 	it('carries the sticky fence lines the transcription copies', () => {
-		expect(guideText).toContain('parser.id // undefined - no id: field seen yet')
 		expect(guideText).toContain(
-			"parser.parse('id: 42\\nretry: 3000\\ndata: x\\n\\n') // [{ data: 'x', id: '42', retry: 3000 }]",
+			"const parser = new SSEParser()\nparser.id // undefined - no id: field seen yet\nparser.parse('id: 42\\nretry: 3000\\ndata: x\\n\\n') // [{ data: 'x', id: '42', retry: 3000 }]\nparser.id // '42' - persisted, survives dispatch\nparser.retry // 3000 - persisted, survives dispatch\nparser.clear()\nparser.id // undefined - clear() drops sticky state",
 		)
-		expect(guideText).toContain("parser.id // '42' - persisted, survives dispatch")
-		expect(guideText).toContain('parser.retry // 3000 - persisted, survives dispatch')
-		expect(guideText).toContain('parser.id // undefined - clear() drops sticky state')
 	})
 
 	it('throws the limit fence OVERFLOW for a chunk past the configured limit', () => {
@@ -317,10 +309,8 @@ describe('flagship fences', () => {
 	})
 
 	it('carries the limit fence lines the transcription copies', () => {
-		expect(guideText).toContain('const parser = new SSEParser({ limit: 10 })')
-		expect(guideText).toContain("parser.parse('x'.repeat(20))")
 		expect(guideText).toContain(
-			"if (isSSEError(error) && error.code === 'OVERFLOW') parser.clear()",
+			"const parser = new SSEParser({ limit: 10 })\ntry {\n\tparser.parse('x'.repeat(20))\n} catch (error) {\n\tif (isSSEError(error) && error.code === 'OVERFLOW') parser.clear()\n}",
 		)
 	})
 
@@ -342,17 +332,8 @@ describe('flagship fences', () => {
 	})
 
 	it('carries the README usage fence lines the transcription copies', () => {
-		expect(readmeText).toContain('const parser = createSSEParser({ limit: 1_000_000 })')
 		expect(readmeText).toContain(
-			"parser.parse('event: ping\\nid: 7\\ndata: 1') // [] - buffered until its blank line",
+			"const parser = createSSEParser({ limit: 1_000_000 })\nparser.parse('data: a\\ndata: b\\n\\n') // [{ data: 'a\\nb' }] - the two data lines joined\nparser.parse('event: ping\\nid: 7\\ndata: 1') // [] - buffered until its blank line\nparser.parse('\\n\\n') // [{ data: '1', event: 'ping', id: '7' }]\n\nparser.id // '7' - sticky last-event-id, survives dispatch\nparser.retry // undefined - sticky reconnection time, until a retry: field arrives\n\ntry {\n\tparser.parse('x'.repeat(2_000_000))\n} catch (error) {\n\tif (isSSEError(error) && error.code === 'OVERFLOW') parser.clear()\n}\n\nparser.flush() // force out a trailing unterminated event at end-of-stream\nparser.clear() // drops buffered state and sticky id/retry",
 		)
-		expect(readmeText).toContain(
-			"parser.parse('\\n\\n') // [{ data: '1', event: 'ping', id: '7' }]",
-		)
-		expect(readmeText).toContain("parser.id // '7' - sticky last-event-id, survives dispatch")
-		expect(readmeText).toContain(
-			'parser.retry // undefined - sticky reconnection time, until a retry: field arrives',
-		)
-		expect(readmeText).toContain('parser.clear() // drops buffered state and sticky id/retry')
 	})
 })
