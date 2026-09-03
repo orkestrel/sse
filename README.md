@@ -5,7 +5,7 @@ event-stream chunks into typed events with `data`, `event`, `id`, and `retry`
 fields. Feed it string chunks as they arrive; a blank line dispatches the
 accumulated event, and a partial line or in-progress event split across
 chunk boundaries is buffered until the rest arrives. The `id` / `retry`
-fields also persist as sticky connection state — surfaced via the `id` /
+fields also persist as sticky connection state — surfaced through the `id` /
 `retry` getters for reconnection — and an optional `limit` bounds total
 buffered characters. A pure functional primitive — no Emitter, no events, no
 server / HTTP / agent coupling; it never throws on malformed input, only a
@@ -20,7 +20,7 @@ npm install @orkestrel/sse
 
 ## Requirements
 
-- Node.js >= 24
+- Node.js >= 22.12.0
 - ESM + CJS (dual-format build)
 - No runtime dependencies
 
@@ -31,10 +31,10 @@ import { createSSEParser, isSSEError } from '@orkestrel/sse'
 
 const parser = createSSEParser({ limit: 1_000_000 })
 parser.parse('data: a\ndata: b\n\n') // [{ data: 'a\nb' }] - the two data lines joined
-parser.parse('event: ping\ndata: 1') // [] - buffered until its blank line
-parser.parse('\n\n') // [{ data: '1', event: 'ping' }]
+parser.parse('event: ping\nid: 7\ndata: 1') // [] - buffered until its blank line
+parser.parse('\n\n') // [{ data: '1', event: 'ping', id: '7' }]
 
-parser.id // '1' - sticky last-event-id, survives dispatch
+parser.id // '7' - sticky last-event-id, survives dispatch
 parser.retry // undefined - sticky reconnection time, until a retry: field arrives
 
 try {

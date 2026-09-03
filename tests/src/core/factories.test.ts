@@ -1,10 +1,11 @@
 import { SSEParser, createSSEParser } from '@src/core'
+import { captureError } from '@orkestrel/test'
 import { describe, expect, it } from 'vitest'
 import { expectSSEError, feedAll } from '../../setup.js'
 
 // The parser factory — createSSEParser returns a working SSEParserInterface. Full
-// buffering / malformed / cross-chunk behavior lives in SSEParser.test.ts; here we
-// assert the factory hands back a usable, independent handle.
+// buffering / malformed / cross-chunk behavior lives in SSEParser.test.ts; this file
+// asserts the factory hands back a usable, independent handle.
 
 describe('createSSEParser', () => {
 	it('returns a working SSEParserInterface (data line → event on its blank line)', () => {
@@ -62,19 +63,8 @@ describe('createSSEParser', () => {
 	})
 
 	it('F2 factory options thread through — createSSEParser({ limit }) overflows like the class', () => {
-		let factoryThrown: unknown
-		try {
-			createSSEParser({ limit: 5 }).parse('123456')
-		} catch (error) {
-			factoryThrown = error
-		}
-
-		let classThrown: unknown
-		try {
-			new SSEParser({ limit: 5 }).parse('123456')
-		} catch (error) {
-			classThrown = error
-		}
+		const factoryThrown = captureError(() => createSSEParser({ limit: 5 }).parse('123456'))
+		const classThrown = captureError(() => new SSEParser({ limit: 5 }).parse('123456'))
 
 		expect(expectSSEError(factoryThrown).code).toBe(expectSSEError(classThrown).code)
 	})

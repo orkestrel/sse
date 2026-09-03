@@ -2,8 +2,7 @@
 // Vitest project (`setupFiles[0]`). Keep this file free of `node:*` and of
 // `document` / `window`: this package is core-only.
 //
-// Scoped to the `sse` corpus this workspace ships today (AGENTS §16.1): generic
-// recorder infrastructure, extracted the moment it could serve another test.
+// SSE corpus helpers shared by this workspace's suites: the wire constants and the chunk-partitioning leaves.
 
 import type { SSEError, SSEEvent, SSEParserInterface } from '@src/core'
 import { isSSEError } from '@src/core'
@@ -13,7 +12,7 @@ afterEach(() => {
 	vi.restoreAllMocks()
 })
 
-// ── SSE line-terminator / whitespace constants (shared — AGENTS §16.1) ─────
+// ── SSE line-terminator and whitespace constants (shared) ─────
 
 // Control bytes spelled as codepoints so the raw wire content is unambiguous
 // in source (a literal `'\r'` is identical, but the codepoint removes doubt).
@@ -34,6 +33,19 @@ export function feedAll(parser: SSEParserInterface, chunks: readonly string[]): 
 }
 
 /**
+ * Returns `stream` cut into consecutive slices of `size` characters, with one
+ * empty slice for an empty stream so a caller always receives a chunk to feed.
+ */
+export function sliceStream(stream: string, size: number): readonly string[] {
+	const chunks: string[] = []
+	for (let index = 0; index < stream.length; index += size) {
+		chunks.push(stream.slice(index, index + size))
+	}
+	if (chunks.length === 0) chunks.push('')
+	return chunks
+}
+
+/**
  * Partition `stream` into a fixed set of chunkings for partition-invariance
  * testing: one chunking per fixed size in `sizes` (default `{1,2,3,5,7,13,len}`)
  * plus every two-way single-cut split (`stream.slice(0, cut)` /
@@ -45,12 +57,7 @@ export function chunkings(
 ): ReadonlyArray<readonly string[]> {
 	const result: string[][] = []
 	for (const size of sizes) {
-		const chunks: string[] = []
-		for (let index = 0; index < stream.length; index += size) {
-			chunks.push(stream.slice(index, index + size))
-		}
-		if (chunks.length === 0) chunks.push('')
-		result.push(chunks)
+		result.push([...sliceStream(stream, size)])
 	}
 	for (let cut = 0; cut <= stream.length; cut += 1) {
 		result.push([stream.slice(0, cut), stream.slice(cut)])
@@ -60,7 +67,7 @@ export function chunkings(
 
 /**
  * Split `stream` into a random sequence of non-empty chunks driven by `rng`
- * (e.g. {@link seededRandom} from `@orkestrel/contract`) — every call
+ * (for example {@link seededRandom} from `@orkestrel/contract`) — every call
  * consumes at least one character, so it always terminates.
  */
 export function partition(stream: string, rng: () => number): readonly string[] {
@@ -73,11 +80,6 @@ export function partition(stream: string, rng: () => number): readonly string[] 
 		index += size
 	}
 	return chunks
-}
-
-/** Repeat `block` `n` times, concatenated with no separator. */
-export function buildRepeated(block: string, n: number): string {
-	return block.repeat(n)
 }
 
 /**

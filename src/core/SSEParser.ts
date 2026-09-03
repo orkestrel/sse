@@ -22,10 +22,10 @@ import { SSEError } from './errors.js'
  *   no event), and the data buffer + event type are cleared for the next event afterwards.
  *   `id` / `retry` ride on the emitted event for the consumer to track per-event - the
  *   emitted event's shape is unchanged - AND are separately persisted as connection
- *   state, exposed via the sticky `id` / `retry` getters (see below).
+ *   state, exposed through the sticky `id` / `retry` getters (see the following bullet).
  * - **Sticky connection state.** Each valid `id:` field updates a persisted
- *   last-event-id, exposed via the `id` getter; each valid `retry:` field updates a
- *   persisted reconnection time, exposed via the `retry` getter. Neither is cleared
+ *   last-event-id, exposed through the `id` getter; each valid `retry:` field updates a
+ *   persisted reconnection time, exposed through the `retry` getter. Neither is cleared
  *   when an event dispatches - only `clear()` drops them - matching WHATWG
  *   last-event-id semantics. A NUL-voided `id` field does not alter the persisted
  *   value.

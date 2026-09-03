@@ -51,10 +51,10 @@ const options: SSEParserOptions = { limit: 1_000_000 }
 
 ### Constants
 
-| API   | Kind  | Summary                                                                                                          |
-| ----- | ----- | ---------------------------------------------------------------------------------------------------------------- |
-| `NUL` | const | The NUL byte (`U+0000`) — an `id:` field containing it is voided per spec and never surfaced.                    |
-| `BOM` | const | The byte-order mark (`U+FEFF`) — stripped from the very first chunk of a stream; ordinary content on later ones. |
+| API   | Kind  | Summary                                                                                                               |
+| ----- | ----- | --------------------------------------------------------------------------------------------------------------------- |
+| `NUL` | const | The NUL byte (`U+0000`) — an `id:` field containing it is voided per spec and never surfaced.                         |
+| `BOM` | const | The byte-order mark (`U+FEFF`) — stripped from the first non-empty chunk of a stream; ordinary content on later ones. |
 
 ```ts
 import { BOM, NUL } from '@orkestrel/sse'
@@ -107,8 +107,9 @@ parser.parse('\n\n') // [{ data: '1', event: 'ping' }]
 ## Methods
 
 The public methods of `SSEParserInterface` — the class's full method surface
-(AGENTS §22). The `readonly` data members `id` / `retry` (sticky connection
-state) stay off the method table below and are documented afterward.
+(AGENTS.md, Documentation contract). The `readonly` data members `id` / `retry`
+(sticky connection state) stay off the following method table and are documented
+after it.
 
 #### `SSEParserInterface`
 

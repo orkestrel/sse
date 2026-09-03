@@ -1,5 +1,5 @@
 // The consumer-side guides-parity drop-in: runs `@orkestrel/guide`'s checks against
-// this repo's own `guides/README.md` manifest. The four constants below are this
+// this repo's own `guides/README.md` manifest. The following constants are this
 // package's own, and are the only part a sibling package changes.
 
 import { describe, expect, it } from 'vitest'
@@ -18,8 +18,10 @@ import {
 	resolveLink,
 } from '@orkestrel/guide'
 import { readFileSync } from 'node:fs'
-import { requireValue } from '@orkestrel/test'
+import { captureError, requireValue } from '@orkestrel/test'
 import { readInventory } from '@orkestrel/test/server'
+import { BOM, NUL, SSEError, SSEParser, createSSEParser, isSSEError } from '@src/core'
+import { expectSSEError } from './setup.js'
 
 /** Every fence language this package's guides are allowed to use. */
 const FENCE_LANGUAGES = Object.freeze(['ts'])
@@ -32,13 +34,16 @@ const MODULES = Object.freeze({ '@orkestrel/sse': 'src/core', '@src/core': 'src/
  *
  * A class that one-class-per-file evicted from its single consumer cannot become a
  * local, so it stays exported without being public. Naming it here is what makes that
- * intentional rather than forgotten — and the second assertion below fails when a name
+ * intentional rather than forgotten — and the twin assertion fails when a name
  * here stops being stranded, so the list cannot rot.
  */
 const INTERNAL: readonly string[] = Object.freeze([])
 
 /** Root-level files this package's guides link to. `readInventory` walks directories only. */
 const ROOT_FILES = Object.freeze(['AGENTS.md'])
+
+/** The guide whose flagship fences the executed cases at the end of this file transcribe. */
+const CORE_GUIDE = 'guides/sse.md'
 
 const root = new URL('../', import.meta.url)
 const files: Record<string, string> = {
@@ -168,3 +173,186 @@ for (const entry of manifest) {
 		})
 	})
 }
+
+// The EXECUTED half of this file. Every check up to here reads a name — from the
+// guide text or from the barrel — and a name that resolves proves nothing about the
+// sentence beside it, so a fence whose comment claims a value the code contradicts
+// passes all of them. The cases here run each flagship fence and assert the values
+// its comments claim, each paired with a presence guard proving the transcribed
+// lines are still the documented ones. Change a fence, change the transcription
+// beside it.
+describe('flagship fences', () => {
+	const guideText = requireValue(files[CORE_GUIDE], `Missing file: ${CORE_GUIDE}`)
+	const readmeText = readFileSync(new URL('README.md', root), 'utf8')
+
+	it('returns the Surface fence values and clears back to a fresh stream', () => {
+		const parser = createSSEParser()
+
+		expect(parser.parse('data: a\ndata: b\n\n')).toEqual([{ data: 'a\nb' }])
+		expect(parser.parse('event: ping\ndata: 1')).toEqual([])
+		expect(parser.parse('\n\n')).toEqual([{ data: '1', event: 'ping' }])
+		parser.clear()
+
+		expect(parser.parse('data: fresh\n\n')).toEqual([{ data: 'fresh' }])
+	})
+
+	it('carries the Surface fence lines the transcription copies', () => {
+		expect(guideText).toContain('const parser = createSSEParser()')
+		expect(guideText).toContain(
+			"parser.parse('data: a\\ndata: b\\n\\n') // [{ data: 'a\\nb' }] - the two data lines joined",
+		)
+		expect(guideText).toContain(
+			"parser.parse('event: ping\\ndata: 1') // [] - the event is buffered until its blank line",
+		)
+		expect(guideText).toContain("parser.parse('\\n\\n') // [{ data: '1', event: 'ping' }]")
+	})
+
+	it('reads the codepoints the Constants fence claims', () => {
+		expect(NUL.charCodeAt(0)).toBe(0)
+		expect(BOM.charCodeAt(0)).toBe(0xfeff)
+	})
+
+	it('carries the Constants fence lines the transcription copies', () => {
+		expect(guideText).toContain('NUL.charCodeAt(0) // 0')
+		expect(guideText).toContain('BOM.charCodeAt(0) // 0xfeff')
+	})
+
+	it('narrows the Errors fence throw to its OVERFLOW code', () => {
+		const thrown = captureError(() => {
+			throw new SSEError('OVERFLOW', 'SSE parser buffer would exceed the configured limit', {
+				limit: 100,
+				size: 150,
+			})
+		})
+
+		expect(isSSEError(thrown)).toBe(true)
+		expect(expectSSEError(thrown).code).toBe('OVERFLOW')
+	})
+
+	it('carries the Errors fence lines the transcription copies', () => {
+		expect(guideText).toContain(
+			"throw new SSEError('OVERFLOW', 'SSE parser buffer would exceed the configured limit', {",
+		)
+		expect(guideText).toContain("if (isSSEError(error)) error.code // 'OVERFLOW'")
+	})
+
+	it('returns the Factories fence values from a parser built with a limit', () => {
+		const parser = createSSEParser({ limit: 1_000_000 })
+
+		expect(parser.parse('data: a\ndata: b\n\n')).toEqual([{ data: 'a\nb' }])
+		expect(parser.parse('event: ping\ndata: 1')).toEqual([])
+		expect(parser.parse('\n\n')).toEqual([{ data: '1', event: 'ping' }])
+	})
+
+	it('carries the Factories fence lines the transcription copies', () => {
+		expect(guideText).toContain('const parser = createSSEParser({ limit: 1_000_000 })')
+		expect(guideText).toContain(
+			"parser.parse('event: ping\\ndata: 1') // [] - buffered until its blank line",
+		)
+	})
+
+	it('returns the Methods fence values from the class the guide constructs', () => {
+		const parser = new SSEParser()
+
+		expect(parser.parse('data: a\ndata: b\n\n')).toEqual([{ data: 'a\nb' }])
+		expect(parser.parse('event: ping\ndata: 1')).toEqual([])
+		expect(parser.parse('\n\n')).toEqual([{ data: '1', event: 'ping' }])
+		parser.clear()
+
+		expect(parser.parse('data: fresh\n\n')).toEqual([{ data: 'fresh' }])
+	})
+
+	it('carries the Methods fence lines the transcription copies', () => {
+		expect(guideText).toContain('const parser = new SSEParser()')
+		expect(guideText).toContain("parser.parse('data: fresh\\n\\n') // [{ data: 'fresh' }]")
+	})
+
+	it('buffers the flush fence line, then forces it out at end-of-stream', () => {
+		const parser = new SSEParser()
+
+		expect(parser.parse('data: incomplete')).toEqual([])
+		expect(parser.flush()).toEqual([{ data: 'incomplete' }])
+	})
+
+	it('carries the flush fence lines the transcription copies', () => {
+		expect(guideText).toContain(
+			"parser.parse('data: incomplete') // [] - no blank line yet, buffered",
+		)
+		expect(guideText).toContain(
+			"parser.flush() // [{ data: 'incomplete' }] - forced out at end-of-stream",
+		)
+	})
+
+	it('persists the sticky fence id and retry across dispatch, until clear drops them', () => {
+		const parser = new SSEParser()
+
+		expect(parser.id).toBeUndefined()
+		expect(parser.parse('id: 42\nretry: 3000\ndata: x\n\n')).toEqual([
+			{ data: 'x', id: '42', retry: 3000 },
+		])
+		expect(parser.id).toBe('42')
+		expect(parser.retry).toBe(3000)
+		parser.clear()
+
+		expect(parser.id).toBeUndefined()
+	})
+
+	it('carries the sticky fence lines the transcription copies', () => {
+		expect(guideText).toContain('parser.id // undefined - no id: field seen yet')
+		expect(guideText).toContain(
+			"parser.parse('id: 42\\nretry: 3000\\ndata: x\\n\\n') // [{ data: 'x', id: '42', retry: 3000 }]",
+		)
+		expect(guideText).toContain("parser.id // '42' - persisted, survives dispatch")
+		expect(guideText).toContain('parser.retry // 3000 - persisted, survives dispatch')
+		expect(guideText).toContain('parser.id // undefined - clear() drops sticky state')
+	})
+
+	it('throws the limit fence OVERFLOW for a chunk past the configured limit', () => {
+		const parser = new SSEParser({ limit: 10 })
+
+		const thrown = captureError(() => parser.parse('x'.repeat(20)))
+
+		expect(isSSEError(thrown)).toBe(true)
+		expect(expectSSEError(thrown).code).toBe('OVERFLOW')
+	})
+
+	it('carries the limit fence lines the transcription copies', () => {
+		expect(guideText).toContain('const parser = new SSEParser({ limit: 10 })')
+		expect(guideText).toContain("parser.parse('x'.repeat(20))")
+		expect(guideText).toContain(
+			"if (isSSEError(error) && error.code === 'OVERFLOW') parser.clear()",
+		)
+	})
+
+	it('returns the README usage fence values, its sticky id included', () => {
+		const parser = createSSEParser({ limit: 1_000_000 })
+
+		expect(parser.parse('data: a\ndata: b\n\n')).toEqual([{ data: 'a\nb' }])
+		expect(parser.parse('event: ping\nid: 7\ndata: 1')).toEqual([])
+		expect(parser.parse('\n\n')).toEqual([{ data: '1', event: 'ping', id: '7' }])
+		expect(parser.id).toBe('7')
+		expect(parser.retry).toBeUndefined()
+
+		const thrown = captureError(() => parser.parse('x'.repeat(2_000_000)))
+
+		expect(expectSSEError(thrown).code).toBe('OVERFLOW')
+		parser.clear()
+
+		expect(parser.flush()).toEqual([])
+	})
+
+	it('carries the README usage fence lines the transcription copies', () => {
+		expect(readmeText).toContain('const parser = createSSEParser({ limit: 1_000_000 })')
+		expect(readmeText).toContain(
+			"parser.parse('event: ping\\nid: 7\\ndata: 1') // [] - buffered until its blank line",
+		)
+		expect(readmeText).toContain(
+			"parser.parse('\\n\\n') // [{ data: '1', event: 'ping', id: '7' }]",
+		)
+		expect(readmeText).toContain("parser.id // '7' - sticky last-event-id, survives dispatch")
+		expect(readmeText).toContain(
+			'parser.retry // undefined - sticky reconnection time, until a retry: field arrives',
+		)
+		expect(readmeText).toContain('parser.clear() // drops buffered state and sticky id/retry')
+	})
+})

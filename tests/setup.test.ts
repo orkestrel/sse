@@ -1,14 +1,13 @@
-// The `setup` project's proof of `tests/setup.ts` — the environment-agnostic
-// recorder infrastructure every Vitest project of this workspace loads first.
+// The `setup` project's proof of `tests/setup.ts` — the environment-agnostic SSE corpus
+// helpers every Vitest project of this workspace loads first.
 //
 // The subject is each helper's own contract: what it returns, in what order, and
 // what it refuses. `SSEParser` appears here as a real instrument, never as a
-// subject — `tests/src/core/SSEParser.test.ts` proves the parser, and the cases
-// below assert only what `feedAll` does with what a parser hands back. Every
-// expectation is a literal or a value rebuilt by a route `tests/setup.ts` does
-// not use: percent-encoding for the control constants, `join('')` for the
-// chunkings the module builds by slicing, and explicit concatenation for the
-// block the module builds by repeating.
+// subject — `tests/src/core/SSEParser.test.ts` proves the parser, and the
+// following cases assert only what `feedAll` does with what a parser hands back.
+// Every expectation is a literal or a value rebuilt by a route `tests/setup.ts`
+// does not use: percent-encoding for the control constants and `join('')` for
+// the chunkings the module builds by slicing.
 //
 // `tests/setup.ts` is host-independent, so every contract it exports is reachable
 // in the Node environment this project runs in. The module's `afterEach` mock
@@ -18,16 +17,7 @@
 import { seededRandom } from '@orkestrel/contract'
 import { SSEError, SSEParser } from '@src/core'
 import { describe, expect, it } from 'vitest'
-import {
-	buildRepeated,
-	chunkings,
-	CR,
-	expectSSEError,
-	feedAll,
-	LF,
-	partition,
-	TAB,
-} from './setup.js'
+import { chunkings, CR, expectSSEError, feedAll, LF, partition, sliceStream, TAB } from './setup.js'
 
 /** A seed any case may re-draw to prove a seeded source repeats. */
 const SEED = 0x5eed
@@ -126,15 +116,22 @@ describe('partition', () => {
 	})
 })
 
-describe('buildRepeated', () => {
-	it('concatenates the block with no separator between copies', () => {
-		const block = 'data: x' + LF + LF
+describe('sliceStream', () => {
+	it('rejoins its slices to the stream it cut, at the fixed size it was given', () => {
+		const stream = 'event: greet' + LF + 'data: alpha' + LF + LF
 
-		expect(buildRepeated(block, 3)).toBe(block + block + block)
+		const chunks = sliceStream(stream, 4)
+
+		expect(chunks.join('')).toBe(stream)
+		expect(chunks[0]).toBe('even')
 	})
 
-	it('returns an empty string for no copies', () => {
-		expect(buildRepeated('data: x' + LF + LF, 0)).toBe('')
+	it('yields one whole chunk for a size larger than the stream', () => {
+		expect(sliceStream('abcdef', 100)).toEqual(['abcdef'])
+	})
+
+	it('yields one empty chunk rather than no chunks for an empty stream', () => {
+		expect(sliceStream('', 3)).toEqual([''])
 	})
 })
 

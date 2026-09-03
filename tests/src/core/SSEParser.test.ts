@@ -1,16 +1,16 @@
 import { BOM, NUL, SSEParser, createSSEParser, isSSEError } from '@src/core'
 import { seededRandom } from '@orkestrel/contract'
-import { requireValue } from '@orkestrel/test'
+import { captureError, requireValue } from '@orkestrel/test'
 import { describe, expect, it } from 'vitest'
 import {
 	CR,
 	LF,
 	TAB,
-	buildRepeated,
 	chunkings,
 	expectSSEError,
 	feedAll,
 	partition,
+	sliceStream,
 } from '../../setup.js'
 
 // The Server-Sent-Events stream parser — the load-bearing behavior is blank-line
@@ -20,7 +20,8 @@ import {
 // (emitting only when data was buffered). `\r\n` / `\r` / `\n` all terminate lines; a
 // leading BOM is stripped from the first chunk; an in-progress event split across
 // chunks buffers until its blank line. Total (never throws on malformed input) and
-// event-free. Driven entirely with plain strings — no network, no fakes (AGENTS §16).
+// event-free. Driven entirely with plain strings — no network, no fakes
+// (.claude/rules/tests.md, Test contract).
 
 describe('SSEParser — a single event', () => {
 	it('dispatches a single data line on its blank line', () => {
@@ -448,29 +449,25 @@ describe('SSEParser — realistic streamed completion at arbitrary chunk boundar
 		{ data: '[DONE]', event: 'done', id: '9' },
 	]
 
-	const drain = (size: number): ReadonlyArray<{ readonly data: string }> => {
-		const parser = new SSEParser()
-		const events = []
-		for (let index = 0; index < stream.length; index += size) {
-			events.push(...parser.parse(stream.slice(index, index + size)))
-		}
-		return events
-	}
-
 	it('reassembles when fed as one whole chunk', () => {
-		expect(drain(stream.length)).toEqual(expected)
+		expect(feedAll(new SSEParser(), sliceStream(stream, stream.length))).toEqual(expected)
 	})
 
 	it('reassembles when split mid-field / mid-data (3-char slices)', () => {
-		expect(drain(3)).toEqual(expected)
+		expect(feedAll(new SSEParser(), sliceStream(stream, 3))).toEqual(expected)
 	})
 
 	it('reassembles when split one character at a time', () => {
-		expect(drain(1)).toEqual(expected)
+		expect(feedAll(new SSEParser(), sliceStream(stream, 1))).toEqual(expected)
 	})
 
 	it('streams the data deltas in order regardless of chunking', () => {
-		expect(drain(2).map((event) => event.data)).toEqual(['The', 'quick', 'fox', '[DONE]'])
+		expect(feedAll(new SSEParser(), sliceStream(stream, 2)).map((event) => event.data)).toEqual([
+			'The',
+			'quick',
+			'fox',
+			'[DONE]',
+		])
 	})
 })
 
@@ -497,10 +494,6 @@ describe('SSEParser — output array integrity', () => {
 		expect(first).not.toBe(second)
 	})
 })
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Battle-test catalog (sections A–G) — see scratchpad/sse-test-catalog.md.
-// ═══════════════════════════════════════════════════════════════════════════
 
 describe('SSEParser — (A) spec conformance', () => {
 	it('A1 a bare `id` (no colon) sets id to the empty string', () => {
@@ -722,11 +715,10 @@ describe('SSEParser — (C) unicode & encoding', () => {
 })
 
 describe('SSEParser — (D) adversarial & malformed', () => {
-	it('D1 prototype pollution is inert — __proto__ is just an ignored/valued field', () => {
+	it('D1 prototype pollution is inert — __proto__ is an ignored or valued field', () => {
 		const first = new SSEParser().parse('__proto__: x\ndata: y\n\n')
 		expect(first).toEqual([{ data: 'y' }])
-		const probe: Record<string, unknown> = {}
-		expect(probe.polluted).toBeUndefined()
+		expect(Object.getPrototypeOf(requireValue(first[0]))).toBe(Object.prototype)
 
 		const second = new SSEParser().parse('id: __proto__\ndata: z\n\n')
 		expect(second).toEqual([{ data: 'z', id: '__proto__' }])
@@ -786,7 +778,7 @@ describe('SSEParser — (D) adversarial & malformed', () => {
 
 describe('SSEParser — (E) limits & volume (CI-fast, deterministic)', () => {
 	it('E1 10,000 events in one chunk dispatch as exactly 10,000 events', () => {
-		const events = new SSEParser().parse(buildRepeated('data: x\n\n', 10000))
+		const events = new SSEParser().parse('data: x\n\n'.repeat(10000))
 		expect(events).toHaveLength(10000)
 	})
 
@@ -827,12 +819,7 @@ describe('SSEParser — (E) limits & volume (CI-fast, deterministic)', () => {
 		it('(b) a configured limit throws SSEError(OVERFLOW) once the buffered total would exceed it', () => {
 			const parser = createSSEParser({ limit: 10 })
 
-			let thrown: unknown
-			try {
-				parser.parse('x'.repeat(20))
-			} catch (error) {
-				thrown = error
-			}
+			const thrown = captureError(() => parser.parse('x'.repeat(20)))
 
 			expect(expectSSEError(thrown).code).toBe('OVERFLOW')
 		})
@@ -850,12 +837,7 @@ describe('SSEParser — (E) limits & volume (CI-fast, deterministic)', () => {
 
 			expect(parser.parse('data: ab\n')).toEqual([])
 
-			let thrown: unknown
-			try {
-				parser.parse('x'.repeat(20))
-			} catch (error) {
-				thrown = error
-			}
+			const thrown = captureError(() => parser.parse('x'.repeat(20)))
 			const sseError = expectSSEError(thrown)
 			expect(sseError.code).toBe('OVERFLOW')
 			expect(sseError.context?.limit).toBe(20)
@@ -1009,7 +991,7 @@ describe('SSEParser — (G) property / invariant suites', () => {
 
 	const EXPECTED = new SSEParser().parse(CORPUS)
 
-	it('G0 sanity: the corpus actually dispatches events', () => {
+	it('G0 the corpus dispatches events', () => {
 		expect(EXPECTED.length).toBeGreaterThan(0)
 	})
 

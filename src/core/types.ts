@@ -62,6 +62,8 @@ export interface SSEParserInterface {
 	 * fields concatenated with `\n`, plus the last `event:` / `id:` / `retry:`); an
 	 * in-progress event and a trailing partial line are retained for the next call.
 	 *
+	 * @param chunk - Stream text appended to the internal buffer before the line split
+	 * @returns Every event a blank line dispatched during this call, in arrival order
 	 * @throws {@link import('./errors.js').SSEError} with code `'OVERFLOW'` when a
 	 * configured `limit` would be exceeded - the parser's state is left unchanged.
 	 */
