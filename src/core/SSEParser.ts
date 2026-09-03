@@ -154,7 +154,7 @@ export class SSEParser implements SSEParserInterface {
 		this.#lastRetry = undefined
 	}
 
-	// Total characters currently buffered: the un-consumed line buffer (always
+	// Total characters buffered: the un-consumed line buffer (always
 	// compacted to offset 0 between calls) plus the in-progress event's accumulated
 	// field lengths (every `data:` segment + the pending `event` + the pending `id`).
 	#size(): number {
