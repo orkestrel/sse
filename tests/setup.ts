@@ -24,8 +24,8 @@ export const TAB = String.fromCharCode(9)
 // ── SSEParser corpus-partitioning helpers (generic, environment-agnostic) ──
 
 /**
- * Feed every chunk in `chunks` to `parser.parse(...)` in order and flatten the
- * dispatched events into a single array.
+ * Feeds every chunk in `chunks` to `parser.parse(...)` in order and flattens
+ * the dispatched events into a single array.
  */
 export function feedAll(parser: SSEParserInterface, chunks: readonly string[]): SSEEvent[] {
 	const events: SSEEvent[] = []
@@ -47,8 +47,8 @@ export function sliceStream(stream: string, size: number): readonly string[] {
 }
 
 /**
- * Partition `stream` into a fixed set of chunkings for partition-invariance
- * testing: one chunking per fixed size in `sizes` (default `{1,2,3,5,7,13,len}`)
+ * Splits `stream` into a fixed set of partitions for partition-invariance
+ * testing: one partition per fixed size in `sizes` (default `{1,2,3,5,7,13,len}`)
  * plus every two-way single-cut split (`stream.slice(0, cut)` /
  * `stream.slice(cut)` for every `cut` from `0` to `stream.length`).
  */
@@ -67,7 +67,7 @@ export function chunkings(
 }
 
 /**
- * Split `stream` into a random sequence of non-empty chunks driven by `rng`
+ * Splits `stream` into a random sequence of non-empty chunks driven by `rng`
  * (for example {@link seededRandom} from `@orkestrel/contract`) — every call
  * consumes at least one character, so it always terminates.
  */
@@ -84,7 +84,7 @@ export function partition(stream: string, rng: () => number): readonly string[] 
 }
 
 /**
- * Narrow a caught value to an {@link SSEError}, throwing (not `expect`ing) when
+ * Narrows a caught value to an {@link SSEError}, throwing (not `expect`ing) when
  * it is not one — lets a caller assert on `.code` / `.context` unconditionally
  * afterward instead of nesting `expect` inside an `if` (vitest/no-conditional-expect).
  */
