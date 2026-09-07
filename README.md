@@ -1,16 +1,12 @@
 # @orkestrel/sse
 
-A typed Server-Sent Events parser — incremental, spec-compliant parsing of
-event-stream chunks into typed events with `data`, `event`, `id`, and `retry`
-fields. Feed it string chunks as they arrive; a blank line dispatches the
-accumulated event, and a partial line or in-progress event split across
-chunk boundaries is buffered until the rest arrives. The `id` / `retry`
-fields also persist as sticky connection state — surfaced through the `id` /
-`retry` getters for reconnection — and an optional `limit` bounds total
-buffered characters. A pure functional primitive — no Emitter, no events, no
-server / HTTP / agent coupling; it never throws on malformed input, only a
-typed `SSEError('OVERFLOW')` when a configured `limit` is exceeded. Part of
-the `@orkestrel` line.
+> A stateful Server-Sent-Events (SSE) stream parser: a handle that turns string chunks into
+> the complete events a blank line has dispatched, buffering a partial line or in-progress
+> event until the rest arrives and persisting the sticky `id` / `retry` connection state.
+
+Create a parser with the `createSSEParser` function, feed it the chunks your transport hands
+you, and read the dispatched events off each `parse(chunk)` return. Part of the `@orkestrel`
+line.
 
 ## Install
 

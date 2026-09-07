@@ -7,7 +7,8 @@ import type { SSEErrorCode } from './types.js'
 // throws.
 
 /**
- * Represents an error thrown by the SSE parser.
+ * Represents an error the SSE parser throws, carrying the machine-readable
+ * {@link SSEErrorCode} a `catch` branches on and an optional `context` of diagnostic detail.
  *
  * @remarks
  * Thrown for: a `parse(chunk)` call whose resulting buffered total (un-consumed

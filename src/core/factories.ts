@@ -2,8 +2,9 @@ import type { SSEParserInterface, SSEParserOptions } from './types.js'
 import { SSEParser } from './SSEParser.js'
 
 /**
- * Creates a Server-Sent-Events (SSE) stream parser - a stateful handle that turns
- * string chunks into the complete events dispatched so far.
+ * Creates a Server-Sent-Events (SSE) stream parser — a stateful {@link SSEParserInterface}
+ * handle, backed by {@link SSEParser}, that turns string chunks into the complete events
+ * dispatched so far.
  *
  * @param options - See {@link SSEParserOptions}.
  * @remarks
@@ -22,19 +23,14 @@ import { SSEParser } from './SSEParser.js'
  *
  * @returns A working {@link SSEParserInterface}
  *
- * @example
+ * @example Factories
  * ```ts
- * import { createSSEParser, isSSEError } from '@src/core'
+ * import { createSSEParser } from '@orkestrel/sse'
  *
  * const parser = createSSEParser({ limit: 1_000_000 })
  * parser.parse('data: a\ndata: b\n\n') // [{ data: 'a\nb' }] - the two data lines joined
  * parser.parse('event: ping\ndata: 1') // [] - buffered until its blank line
- * parser.parse('\n\n')                  // [{ data: '1', event: 'ping' }]
- * try {
- * 	parser.parse('x'.repeat(2_000_000))
- * } catch (error) {
- * 	if (isSSEError(error) && error.code === 'OVERFLOW') parser.clear()
- * }
+ * parser.parse('\n\n') // [{ data: '1', event: 'ping' }]
  * ```
  */
 export function createSSEParser(options?: SSEParserOptions): SSEParserInterface {

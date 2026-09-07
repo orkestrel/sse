@@ -3,8 +3,9 @@ import { BOM, NUL } from './constants.js'
 import { SSEError } from './errors.js'
 
 /**
- * Represents a stateful Server-Sent-Events (SSE) stream parser - feed it string chunks, get
- * back the complete events dispatched so far.
+ * Implements {@link SSEParserInterface} over one internal line buffer, reassembling an event
+ * split across chunk boundaries once its blank line arrives and holding the sticky `id` /
+ * `retry` connection state until `clear()` drops it.
  *
  * @remarks
  * - **The wire format.** SSE is a UTF-8 text stream of events separated by a blank
