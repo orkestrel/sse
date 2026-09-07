@@ -27,21 +27,23 @@ export interface SSEEvent {
 }
 
 /**
- * Names the machine-readable code an `SSEError` carries — `'OVERFLOW'` alone, thrown when a
- * `parse(chunk)` call would push the buffered total over a configured `limit`.
+ * Names the machine-readable code an {@link import('./errors.js').SSEError} carries —
+ * `'OVERFLOW'` alone, thrown when a `parse(chunk)` call would push the buffered total over a
+ * configured `limit`.
  */
 export type SSEErrorCode = 'OVERFLOW'
 
 /**
- * Configures the parser `createSSEParser` builds and the `SSEParser` constructor accepts —
- * `limit` caps the total buffered characters held at once, and leaving it unset keeps the
- * buffering unbounded.
+ * Configures the parser {@link import('./factories.js').createSSEParser} builds and the
+ * {@link import('./SSEParser.js').SSEParser} constructor accepts — `limit` caps the total
+ * buffered characters held at once, and leaving it unset keeps the buffering unbounded.
  *
  * @remarks
  * The bounded total is the un-consumed line buffer plus the in-progress event's accumulated
  * field lengths (data segments + event type + pending id). With no `limit` the parser never
  * throws. When set, a `parse(chunk)` call that would push the buffered total over `limit`
- * throws an `SSEError` with code `'OVERFLOW'` instead of appending the chunk.
+ * throws an {@link import('./errors.js').SSEError} with code `'OVERFLOW'` instead of
+ * appending the chunk.
  */
 export interface SSEParserOptions {
 	readonly limit?: number

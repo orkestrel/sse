@@ -89,6 +89,8 @@ try {
 | ----------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `createSSEParser` | function | Creates a Server-Sent-Events (SSE) stream parser — a stateful `SSEParserInterface` handle, backed by `SSEParser`, that turns string chunks into the complete events dispatched so far. |
 
+#### Create a bounded parser and feed it chunks
+
 ```ts
 import { createSSEParser } from '@orkestrel/sse'
 
@@ -143,7 +145,7 @@ parser.flush() // [{ data: 'incomplete' }] - forced out at end-of-stream
 ```
 
 `id` / `retry` are sticky connection state (WHATWG last-event-id semantics):
-each valid `id:` / `retry:` field updates them, dispatch does NOT clear them,
+each valid `id:` / `retry:` field updates them, dispatch does not clear them,
 and only `clear()` does — useful for reconnection (`Last-Event-ID` header):
 
 ```ts
@@ -171,3 +173,11 @@ try {
 	if (isSSEError(error) && error.code === 'OVERFLOW') parser.clear()
 }
 ```
+
+## Tests
+
+- [`tests/guides.test.ts`](../tests/guides.test.ts) — the `## Surface` ↔ `src/core` bijection (value and type exports), the `SSEParserInterface` ↔ `SSEParser` method bijection, and the equality gate: every `Summary` cell against its declaration's description paragraph, the titled `Create a bounded parser and feed it chunks` fence against the `@example` block of that title (pinned so the titled pair cannot be retired silently), and the README pitch against this guide's tagline. It also runs the flagship fences and asserts the values their comments claim.
+- [`tests/src/core/SSEParser.test.ts`](../tests/src/core/SSEParser.test.ts) — the parser against the WHATWG algorithm: dispatch on the blank line, stripping only the first space after a colon, multi-line `data:` concatenation with no trailing newline, every field together with last-wins repeats, comment and unknown-field handling, the empty-data rule that emits no spurious event, cross-chunk reassembly, LF / CRLF / bare-CR terminators including a CRLF split across chunks, first-chunk BOM stripping, integer-only `retry:`, a NUL-voided `id:`, sticky `id` / `retry` surviving dispatch until `clear()` drops them, `clear()` dropping the buffered line and the carriage hold and re-arming BOM stripping, returned arrays never aliased across calls, a configured `limit` throwing `SSEError('OVERFLOW')` with parser state unchanged, unicode and adversarial input, volume runs, and the invariant suites that feed one corpus through every fixed-size and two-way-split chunking and require the whole-string parse back.
+- [`tests/src/core/factories.test.ts`](../tests/src/core/factories.test.ts) — `createSSEParser` returns a working `SSEParserInterface`, hands back handles that share no buffer state, matches `new SSEParser()` over a shared corpus, and threads `limit` through to the same overflow.
+- [`tests/policy.test.ts`](../tests/policy.test.ts) — this repository's own conventions: the scratch containment guard, the mirror register pairing each test with its module, the population controls with their negative controls, the skill family and bridge rules, the rule map, portability, the prose denylist and its currency, and the policy configuration wiring.
+- [`tests/config.test.ts`](../tests/config.test.ts) — the root configuration read from the real config files, the Oxlint policy plugin's rules driven through `RuleTester`, and the configuration helpers.

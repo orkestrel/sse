@@ -23,7 +23,7 @@ import { SSEParser } from './SSEParser.js'
  *
  * @returns A working {@link SSEParserInterface}
  *
- * @example Factories
+ * @example Create a bounded parser and feed it chunks
  * ```ts
  * import { createSSEParser } from '@orkestrel/sse'
  *
