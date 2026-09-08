@@ -34,14 +34,14 @@ parser.clear() // drop any buffered partial line / event - ready for a fresh str
 
 ### Types
 
-A `Shape` cell holds an interface's members in braces, and a type alias's value.
+A `Shape` cell holds an interface's data members as bare names in braces, `?` marking an optional member and `plus` introducing its call-signature members, and a type alias's own type literal with a union's arms escaped as `\|`.
 
-| Type                 | Kind      | Shape                                | Summary                                                                                                                                                                                                                                                                                                           |
-| -------------------- | --------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SSEEvent`           | interface | `{ data, event?, id?, retry? }`      | Represents one dispatched Server-Sent Event — the value a blank line flushes from an `SSEParserInterface`. Its `data` holds every `data:` field of that event joined by `\n` with no trailing newline, and `event` / `id` / `retry` hold the last field of each name the event carried.                           |
-| `SSEParserInterface` | interface | `{ parse, flush, clear, id, retry }` | Represents a stateful Server-Sent-Events (SSE) stream parser: feed it string chunks, get back the complete events dispatched so far. A trailing partial line / in-progress event is buffered until the rest arrives, and the sticky `id` / `retry` getters carry the connection state a dispatch leaves in place. |
-| `SSEParserOptions`   | interface | `{ limit? }`                         | Configures the parser `createSSEParser` builds and the `SSEParser` constructor accepts — `limit` caps the total buffered characters held at once, and leaving it unset keeps the buffering unbounded.                                                                                                             |
-| `SSEErrorCode`       | type      | `'OVERFLOW'`                         | Names the machine-readable code an `SSEError` carries — `'OVERFLOW'` alone, thrown when a `parse(chunk)` call would push the buffered total over a configured `limit`.                                                                                                                                            |
+| Type                 | Kind      | Shape                                    | Summary                                                                                                                                                                                                                                                                                                           |
+| -------------------- | --------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SSEEvent`           | interface | `{ data, event?, id?, retry? }`          | Represents one dispatched Server-Sent Event — the value a blank line flushes from an `SSEParserInterface`. Its `data` holds every `data:` field of that event joined by `\n` with no trailing newline, and `event` / `id` / `retry` hold the last field of each name the event carried.                           |
+| `SSEParserInterface` | interface | `{ id, retry } plus parse, flush, clear` | Represents a stateful Server-Sent-Events (SSE) stream parser: feed it string chunks, get back the complete events dispatched so far. A trailing partial line / in-progress event is buffered until the rest arrives, and the sticky `id` / `retry` getters carry the connection state a dispatch leaves in place. |
+| `SSEParserOptions`   | interface | `{ limit? }`                             | Configures the parser `createSSEParser` builds and the `SSEParser` constructor accepts — `limit` caps the total buffered characters held at once, and leaving it unset keeps the buffering unbounded.                                                                                                             |
+| `SSEErrorCode`       | type      | `'OVERFLOW'`                             | Names the machine-readable code an `SSEError` carries — `'OVERFLOW'` alone, thrown when a `parse(chunk)` call would push the buffered total over a configured `limit`.                                                                                                                                            |
 
 ```ts
 import type { SSEParserOptions } from '@orkestrel/sse'
@@ -51,10 +51,12 @@ const options: SSEParserOptions = { limit: 1_000_000 }
 
 ### Constants
 
-| API   | Kind  | Summary                                                                                                                                              |
-| ----- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NUL` | const | Names the null byte (`U+0000`). The SSE spec voids an `id:` field whose value contains it, so an `id` carrying a NUL is never surfaced.              |
-| `BOM` | const | Names the byte-order mark (`U+FEFF`), stripped from the first non-empty chunk of an SSE stream (a leading mark on later chunks is ordinary content). |
+A `Shape` cell holds the constant's declared type.
+
+| API   | Kind  | Shape  | Summary                                                                                                                                              |
+| ----- | ----- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NUL` | const | string | Names the null byte (`U+0000`). The SSE spec voids an `id:` field whose value contains it, so an `id` carrying a NUL is never surfaced.              |
+| `BOM` | const | string | Names the byte-order mark (`U+FEFF`), stripped from the first non-empty chunk of an SSE stream (a leading mark on later chunks is ordinary content). |
 
 ```ts
 import { BOM, NUL } from '@orkestrel/sse'
@@ -90,6 +92,8 @@ try {
 | `createSSEParser` | function | Creates a Server-Sent-Events (SSE) stream parser — a stateful `SSEParserInterface` handle, backed by `SSEParser`, that turns string chunks into the complete events dispatched so far. |
 
 #### Create a bounded parser and feed it chunks
+
+The following builds a parser bounded by `limit` and feeds it chunks as they arrive:
 
 ```ts
 import { createSSEParser } from '@orkestrel/sse'
