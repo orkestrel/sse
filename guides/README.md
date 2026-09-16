@@ -16,9 +16,11 @@ A dual-axis index into this repository's guides — by concept, and by directory
 
 ## Dependency reference
 
-`@orkestrel/sse` is a **core-only** package with no `@orkestrel/*` runtime
-dependencies, so no runtime-dependency mirror sits beside this index. The mirrors
-that do are the guides of the devDependencies the suites and the toolchain use.
+[`contract.md`](contract.md) is a byte-identical mirror of the guide for `@orkestrel/contract` — this
+package's runtime dependency. It documents **that package's** surface, not anything sourced in this
+repository.
+
+The other mirrors are the guides of the devDependencies the suites and the toolchain use.
 
 [`guide.md`](guide.md) is a byte-identical mirror of the guide for
 `@orkestrel/guide` — the devDependency powering this repo's guides-parity
@@ -26,9 +28,8 @@ test suite (`tests/guides.test.ts`). It documents **that
 package's** surface (`Guide` / `Source`, the manifest and comparison
 helpers), not anything sourced in this repo; it is kept here so a reader of
 the parity suite can see the primitives it is built from without leaving
-this guide set. [`contract.md`](contract.md), [`probe.md`](probe.md),
-[`scaffold.md`](scaffold.md), and [`test.md`](test.md) are the same kind of
-mirror for the other devDependencies.
+this guide set. [`probe.md`](probe.md), [`scaffold.md`](scaffold.md), and [`test.md`](test.md)
+are the same kind of mirror for the other devDependencies.
 
 ## See also
 

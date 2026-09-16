@@ -19,7 +19,7 @@ afterEach(() => {
 // in source (a literal `'\r'` is identical, but the codepoint removes doubt).
 export const LF = String.fromCharCode(10)
 export const CR = String.fromCharCode(13)
-export const TAB = String.fromCharCode(9)
+export const tabulation = String.fromCharCode(9)
 
 // ── SSEParser corpus-partitioning helpers (generic, environment-agnostic) ──
 
