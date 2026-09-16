@@ -17,7 +17,16 @@
 import { seededRandom } from '@orkestrel/contract'
 import { SSEError, SSEParser } from '@src/core'
 import { describe, expect, it } from 'vitest'
-import { chunkings, CR, expectSSEError, feedAll, LF, partition, sliceStream, tabulation } from './setup.js'
+import {
+	chunkings,
+	CR,
+	expectSSEError,
+	feedAll,
+	LF,
+	partition,
+	sliceStream,
+	tabulation,
+} from './setup.js'
 
 /** A seed any case may re-draw to prove a seeded source repeats. */
 const SEED = 0x5eed
@@ -26,7 +35,11 @@ describe('wire constants', () => {
 	it('carries one control character each, matching its name', () => {
 		// Percent-encoding reads the UTF-8 byte, which `String.fromCharCode` never
 		// touches: LINE FEED is 0x0A, CARRIAGE RETURN 0x0D, CHARACTER TABULATION 0x09.
-		expect([LF, CR, tabulation].map((value) => encodeURIComponent(value))).toEqual(['%0A', '%0D', '%09'])
+		expect([LF, CR, tabulation].map((value) => encodeURIComponent(value))).toEqual([
+			'%0A',
+			'%0D',
+			'%09',
+		])
 		expect([LF.length, CR.length, tabulation.length]).toEqual([1, 1, 1])
 	})
 })

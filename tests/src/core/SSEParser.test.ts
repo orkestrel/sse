@@ -575,7 +575,9 @@ describe('SSEParser — (A) spec conformance', () => {
 	})
 
 	it('A7 a tab after the colon is not stripped — only one leading U+0020 is', () => {
-		expect(new SSEParser().parse('data:' + tabulation + 'x\n\n')).toEqual([{ data: tabulation + 'x' }])
+		expect(new SSEParser().parse('data:' + tabulation + 'x\n\n')).toEqual([
+			{ data: tabulation + 'x' },
+		])
 	})
 
 	it('A8 a line of only a colon is a comment', () => {
