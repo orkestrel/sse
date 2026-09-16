@@ -1,4 +1,5 @@
 import type { SSEErrorCode } from './types.js'
+import { isInstance } from '@orkestrel/contract'
 
 // .claude/rules/typescript.md, Errors and outcomes: a configured `limit` exceeded by a
 // `parse(chunk)` call `throw`s an `SSEError` carrying a machine-readable `code`, so a `catch`
@@ -71,5 +72,5 @@ export class SSEError extends Error {
  * ```
  */
 export function isSSEError(value: unknown): value is SSEError {
-	return value instanceof SSEError
+	return isInstance(value, SSEError)
 }
