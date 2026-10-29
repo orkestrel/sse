@@ -80,6 +80,8 @@ class DerivedError extends imported.SSEError {}
 const subclass = new DerivedError('OVERFLOW', 'subclass')
 subclass.name = 'DerivedError'
 const brand = Symbol.for('@orkestrel/sse.SSEError')
+const entries = [imported, required, copied]
+assert.equal(new Set(entries.map((entry) => entry.SSEError)).size, entries.length)
 for (const entry of [imported, required, copied]) {
 	for (const other of [imported, required, copied]) {
 		const error = new other.SSEError('OVERFLOW', 'closed', { connection: 'test' })

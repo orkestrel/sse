@@ -1,5 +1,5 @@
 import type { SSEErrorCode } from './types.js'
-import { holds, INTRINSICS, isInstance, isObject } from '@orkestrel/contract'
+import { holds, INTRINSICS, isFunction, isInstance, isObject } from '@orkestrel/contract'
 
 // .claude/rules/typescript.md, Errors and outcomes: a configured `limit` exceeded by a
 // `parse(chunk)` call `throw`s an `SSEError` carrying a machine-readable `code`, so a `catch`
@@ -83,6 +83,8 @@ export function isSSEError(value: unknown): value is SSEError {
 			return false
 		const code: unknown = INTRINSICS.reflect.read(value, 'code')
 		const context: unknown = INTRINSICS.reflect.read(value, 'context')
-		return code === 'OVERFLOW' && (context === undefined || isObject(context))
+		return (
+			code === 'OVERFLOW' && (context === undefined || isObject(context) || isFunction(context))
+		)
 	})
 }
