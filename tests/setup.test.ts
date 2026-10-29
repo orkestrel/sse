@@ -101,7 +101,10 @@ describe('chunkings', () => {
 describe('partition', () => {
 	it('rejoins to the stream with no empty chunk, across the whole range of the source', () => {
 		const stream = 'data: alpha' + LF + LF + 'data: beta' + LF + LF
-		const sources: ReadonlyArray<() => number> = [() => 0, () => 0.5, () => 1, seededRandom(SEED)]
+		const sources: ReadonlyArray<() => number> = [
+			...[0, 0.5, 1].map((value) => () => value),
+			seededRandom(SEED),
+		]
 
 		for (const rng of sources) {
 			const chunks = partition(stream, rng)

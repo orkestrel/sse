@@ -85,6 +85,12 @@ try {
 }
 ```
 
+`isSSEError` recognizes the own identity brand and declared members across package copies
+and module formats. It accepts subclass instances without requiring their name and refuses
+unbranded look-alikes, transparent proxies, and objects carrying only the brand. The constructor
+stores the error itself under `Symbol.for('@orkestrel/sse.SSEError')` as a non-enumerable,
+non-writable own property.
+
 ### Factories
 
 | API               | Kind     | Summary                                                                                                                                                                                |

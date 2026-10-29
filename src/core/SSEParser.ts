@@ -112,11 +112,9 @@ export class SSEParser implements SSEParserInterface {
 		}
 		// Strip a leading byte-order mark on the first NON-EMPTY chunk only - an empty
 		// `parse('')` before any content must not disarm the check.
-		if (!this.#started && chunk.length > 0) {
-			this.#started = true
-			if (chunk.startsWith(BOM)) chunk = chunk.slice(BOM.length)
-		}
-		this.#buffer += chunk
+		const content = !this.#started && chunk.startsWith(BOM) ? chunk.slice(BOM.length) : chunk
+		if (!this.#started && chunk.length > 0) this.#started = true
+		this.#buffer += content
 		const events: SSEEvent[] = []
 		// Pull every COMPLETE line off the buffer by advancing the read cursor, leaving
 		// the trailing partial line buffered (unconsumed) for the next call.
@@ -159,8 +157,7 @@ export class SSEParser implements SSEParserInterface {
 	// compacted to offset 0 between calls) plus the in-progress event's accumulated
 	// field lengths (every `data:` segment + the pending `event` + the pending `id`).
 	#size(): number {
-		let dataTotal = 0
-		for (const segment of this.#data) dataTotal += segment.length
+		const dataTotal = this.#data.reduce((total, segment) => total + segment.length, 0)
 		return this.#buffer.length + dataTotal + (this.#event?.length ?? 0) + (this.#id?.length ?? 0)
 	}
 
@@ -205,9 +202,8 @@ export class SSEParser implements SSEParserInterface {
 		// No colon → the whole line is the field name, value is empty (per spec).
 		const field = colon === -1 ? line : line.slice(0, colon)
 		// One optional leading space after the colon is stripped; nothing else.
-		let value = colon === -1 ? '' : line.slice(colon + 1)
-		if (value.startsWith(' ')) value = value.slice(1)
-		this.#field(field, value)
+		const value = colon === -1 ? '' : line.slice(colon + 1)
+		this.#field(field, value.startsWith(' ') ? value.slice(1) : value)
 	}
 
 	// Apply one parsed field to the in-progress event (and the persisted connection

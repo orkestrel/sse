@@ -9,6 +9,7 @@ import type { TestContext } from 'vitest'
 import { isArray, isObject, isString } from '@orkestrel/contract'
 import { spawnSync } from 'node:child_process'
 import {
+	cpSync,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
@@ -31,7 +32,11 @@ const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 // compiler majors this toolchain supports, and its in-process API is not. It is
 // resolved from the workspace under proof, so a consumer of the packed artifact is
 // checked by the same compiler that workspace's own `check` script runs.
-const TSC = createRequire(join(ROOT, 'package.json')).resolve('typescript/bin/tsc')
+const TSC = join(
+	dirname(createRequire(join(ROOT, 'package.json')).resolve('typescript/package.json')),
+	'bin',
+	'tsc',
+)
 // Windows needs a shell to launch a `.cmd`: Node refuses one directly since the
 // batch-argument hardening, and `spawnSync` returns `EINVAL` with a null status
 // rather than an exit code a caller can read. Every following argument is a literal or
@@ -63,6 +68,40 @@ process.stdout.write(JSON.stringify(Object.keys(entry).sort()))
 `
 const CJS_DRIVER_SOURCE = `const entry = require(process.argv[2])
 process.stdout.write(JSON.stringify(Object.keys(entry).sort()))
+`
+
+const ERROR_DRIVER_SOURCE = `import assert from 'node:assert/strict'
+import { createRequire } from 'node:module'
+import { pathToFileURL } from 'node:url'
+const imported = await import(process.argv[2])
+const required = createRequire(import.meta.url)(process.argv[2])
+const copied = await import(pathToFileURL(process.argv[3]).href)
+class DerivedError extends imported.SSEError {}
+const subclass = new DerivedError('OVERFLOW', 'subclass')
+subclass.name = 'DerivedError'
+const brand = Symbol.for('@orkestrel/sse.SSEError')
+for (const entry of [imported, required, copied]) {
+	for (const other of [imported, required, copied]) {
+		const error = new other.SSEError('OVERFLOW', 'closed', { connection: 'test' })
+		assert.equal(entry.isSSEError(error), true)
+		const descriptor = Object.getOwnPropertyDescriptor(error, brand)
+		assert.equal(descriptor?.value, error)
+		assert.equal(descriptor?.enumerable, false)
+		assert.equal(descriptor?.writable, false)
+		assert.equal(entry.isSSEError(new Proxy(error, {})), false)
+	}
+	assert.equal(entry.isSSEError(subclass), true)
+	assert.equal(entry.isSSEError(Object.assign(new Error('look-alike'), { code: 'OVERFLOW' })), false)
+	const plain = {}
+	Object.defineProperty(plain, brand, { value: plain })
+	assert.equal(entry.isSSEError(plain), false)
+	const invalid = new imported.SSEError('OVERFLOW', 'invalid')
+	Object.defineProperty(invalid, 'code', { value: 'FOREIGN' })
+	assert.equal(entry.isSSEError(invalid), false)
+	const context = new imported.SSEError('OVERFLOW', 'invalid context')
+	Object.defineProperty(context, 'context', { get() { throw new Error('unreadable') } })
+	assert.equal(entry.isSSEError(context), false)
+}
 `
 
 // The extensions a JavaScript handler loads as modules. Node loads a native addon
@@ -193,14 +232,18 @@ function isNames(value: unknown): value is readonly string[] {
 function isPackageTarget(target: string): boolean {
 	if (!target.startsWith('./')) return false
 	for (const segment of target.slice(2).split(/[\\/]/u)) {
-		let decoded = segment
-		try {
-			decoded = decodeURIComponent(segment)
-		} catch {}
-		const normalized = decoded.toLowerCase()
+		const normalized = decodeSegment(segment).toLowerCase()
 		if (normalized === '.' || normalized === '..' || normalized === 'node_modules') return false
 	}
 	return true
+}
+
+function decodeSegment(segment: string): string {
+	try {
+		return decodeURIComponent(segment)
+	} catch {
+		return segment
+	}
 }
 
 function readJson(path: string): unknown {
@@ -284,12 +327,16 @@ function matchesFile(path: string): boolean {
 // the containing condition or fallback list unresolved, so the walk continues.
 function targetToDeclaration(target: string, installed: string): string | undefined {
 	if (!isPackageTarget(target)) return undefined
-	let declaration = target
-	if (target.endsWith('.cjs')) declaration = `${target.slice(0, -4)}.d.cts`
-	else if (target.endsWith('.mjs')) declaration = `${target.slice(0, -4)}.d.mts`
-	else if (target.endsWith('.js')) declaration = `${target.slice(0, -3)}.d.ts`
-	else if (!isDeclaration(target)) return undefined
+	const declaration = resolveDeclarationTarget(target)
+	if (declaration === undefined) return undefined
 	return matchesFile(join(installed, declaration)) ? declaration : undefined
+}
+
+function resolveDeclarationTarget(target: string): string | undefined {
+	if (target.endsWith('.cjs')) return `${target.slice(0, -4)}.d.cts`
+	if (target.endsWith('.mjs')) return `${target.slice(0, -4)}.d.mts`
+	if (target.endsWith('.js')) return `${target.slice(0, -3)}.d.ts`
+	return isDeclaration(target) ? target : undefined
 }
 
 // The declaration TypeScript resolves through one importing format's conditions.
@@ -320,22 +367,22 @@ function resolveDeclaration(
 // physical nested manifest starts a scope even when it omits `type` or cannot be
 // parsed. A directory at that spelling is not a manifest, so the walk continues.
 function readPackageType(installed: string, target: string): unknown {
-	let directory = dirname(join(installed, target))
-	while (true) {
-		const path = join(directory, 'package.json')
-		if (matchesFile(path)) {
-			try {
-				const manifest = readJson(path)
-				return isRecord(manifest) ? manifest.type : undefined
-			} catch {
-				return undefined
-			}
+	return readDirectoryType(installed, dirname(join(installed, target)))
+}
+
+function readDirectoryType(installed: string, directory: string): unknown {
+	const path = join(directory, 'package.json')
+	if (matchesFile(path)) {
+		try {
+			const manifest = readJson(path)
+			return isRecord(manifest) ? manifest.type : undefined
+		} catch {
+			return undefined
 		}
-		if (directory === installed) return undefined
-		const parent = dirname(directory)
-		if (parent === directory) return undefined
-		directory = parent
 	}
+	if (directory === installed) return undefined
+	const parent = dirname(directory)
+	return parent === directory ? undefined : readDirectoryType(installed, parent)
 }
 
 function resolvesBrowser(entry: unknown): boolean {
@@ -771,6 +818,21 @@ function requireStage(context: TestContext): Stage {
 }
 
 describe('installed package consumer', () => {
+	it('recognizes branded errors across module formats and installed copies [requires the registry]', (context) => {
+		const stage = requireStage(context)
+		const name = readManifestName(join(stage.installed, 'package.json'))
+		const entry = stage.entries.find((candidate) => candidate.subpath === '.')
+		const target = resolveTarget(entry?.mapping, RUNTIME_CONDITIONS.module)
+		if (target === undefined) throw new Error('The package has no import target')
+		const copy = join(stage.consumer, 'node_modules', '@orkestrel', 'sse-copy')
+		cpSync(stage.installed, copy, { recursive: true })
+		const driver = join(stage.consumer, 'errors.mts')
+		writeFile(driver, ERROR_DRIVER_SOURCE)
+		const result = runNode([driver, name, join(copy, target)], stage.consumer)
+		if (result.status !== 0) throw new Error(readOutput(result))
+		expect(result.status).toBe(0)
+	})
+
 	it('packs one archive and installs it in isolation [requires the registry]', (context) => {
 		const stage = requireStage(context)
 		expect(stage.archives).toHaveLength(1)

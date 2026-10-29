@@ -9,6 +9,26 @@ import type { SSEError, SSEEvent, SSEParserInterface } from '@src/core'
 import { isSSEError } from '@src/core'
 import { afterEach, vi } from 'vitest'
 
+class SSEChunks {
+	readonly #stream: string
+	readonly #size: (remaining: number) => number
+	#index = 0
+
+	constructor(stream: string, size: (remaining: number) => number) {
+		this.#stream = stream
+		this.#size = size
+	}
+
+	*[Symbol.iterator](): Generator<string> {
+		while (this.#index < this.#stream.length) {
+			const size = this.#size(this.#stream.length - this.#index)
+			const chunk = this.#stream.slice(this.#index, this.#index + size)
+			this.#index += size
+			yield chunk
+		}
+	}
+}
+
 afterEach(() => {
 	vi.restoreAllMocks()
 })
@@ -27,10 +47,13 @@ export const tabulation = String.fromCharCode(9)
  * Feeds every chunk in `chunks` to `parser.parse(...)` in order and flattens
  * the dispatched events into a single array.
  */
-export function feedAll(parser: SSEParserInterface, chunks: readonly string[]): SSEEvent[] {
-	const events: SSEEvent[] = []
-	for (const chunk of chunks) events.push(...parser.parse(chunk))
-	return events
+export function feedAll(
+	parser: SSEParserInterface,
+	chunks: readonly string[],
+): readonly SSEEvent[] {
+	return Iterator.from(chunks)
+		.flatMap((chunk) => parser.parse(chunk))
+		.toArray()
 }
 
 /**
@@ -38,12 +61,7 @@ export function feedAll(parser: SSEParserInterface, chunks: readonly string[]): 
  * empty slice for an empty stream so a caller always receives a chunk to feed.
  */
 export function sliceStream(stream: string, size: number): readonly string[] {
-	const chunks: string[] = []
-	for (let index = 0; index < stream.length; index += size) {
-		chunks.push(stream.slice(index, index + size))
-	}
-	if (chunks.length === 0) chunks.push('')
-	return chunks
+	return stream.length === 0 ? [''] : Array.from(new SSEChunks(stream, () => size))
 }
 
 /**
@@ -56,14 +74,13 @@ export function chunkings(
 	stream: string,
 	sizes: readonly number[] = [1, 2, 3, 5, 7, 13, stream.length],
 ): ReadonlyArray<readonly string[]> {
-	const result: string[][] = []
-	for (const size of sizes) {
-		result.push([...sliceStream(stream, size)])
-	}
-	for (let cut = 0; cut <= stream.length; cut += 1) {
-		result.push([stream.slice(0, cut), stream.slice(cut)])
-	}
-	return result
+	return [
+		...Iterator.from(sizes).map((size) => [...sliceStream(stream, size)]),
+		...Array.from({ length: stream.length + 1 }, (_, cut) => [
+			stream.slice(0, cut),
+			stream.slice(cut),
+		]),
+	]
 }
 
 /**
@@ -72,15 +89,9 @@ export function chunkings(
  * consumes at least one character, so it always terminates.
  */
 export function partition(stream: string, rng: () => number): readonly string[] {
-	const chunks: string[] = []
-	let index = 0
-	while (index < stream.length) {
-		const remaining = stream.length - index
-		const size = Math.max(1, Math.floor(rng() * remaining) + 1)
-		chunks.push(stream.slice(index, index + size))
-		index += size
-	}
-	return chunks
+	return Array.from(
+		new SSEChunks(stream, (remaining) => Math.max(1, Math.floor(rng() * remaining) + 1)),
+	)
 }
 
 /**

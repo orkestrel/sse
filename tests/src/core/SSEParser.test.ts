@@ -241,7 +241,7 @@ describe('SSEParser — cross-chunk reassembly', () => {
 			{ data: '2', id: '9' },
 		]
 
-		for (let cut = 0; cut <= stream.length; cut += 1) {
+		for (const cut of Array.from({ length: stream.length + 1 }).keys()) {
 			const parser = new SSEParser()
 			const events = [...parser.parse(stream.slice(0, cut)), ...parser.parse(stream.slice(cut))]
 			expect(events).toEqual(expected)
@@ -656,15 +656,9 @@ describe('SSEParser — (B) cross-chunk / incremental', () => {
 			'event: done\ndata: [DONE]\nid: 9\n\n'
 		const expected = new SSEParser().parse(corpus)
 
-		const chunks: string[] = []
-		let index = 0
-		let large = true
-		while (index < corpus.length) {
-			const size = large ? 7 : 1
-			chunks.push(corpus.slice(index, index + size))
-			index += size
-			large = !large
-		}
+		const chunks = sliceStream(corpus, 8).flatMap((chunk) =>
+			chunk.length > 7 ? [chunk.slice(0, 7), chunk.slice(7)] : [chunk],
+		)
 
 		expect(feedAll(new SSEParser(), chunks)).toEqual(expected)
 	})
@@ -855,16 +849,15 @@ describe('SSEParser — (E) limits & volume (CI-fast, deterministic)', () => {
 		it('(e) accumulated event fields count toward the total — many small data: lines eventually overflow', () => {
 			const parser = createSSEParser({ limit: 50 })
 
-			let thrown: unknown
-			let iterations = 0
-			for (; iterations < 100; iterations += 1) {
-				try {
-					parser.parse('data: x\n')
-				} catch (error) {
-					thrown = error
-					break
-				}
-			}
+			const failure = Array.from({ length: 100 })
+				.keys()
+				.map((iterations) => ({
+					iterations,
+					thrown: captureError(() => parser.parse('data: x\n')),
+				}))
+				.find(({ thrown }) => thrown !== undefined)
+			const thrown = failure?.thrown
+			const iterations = failure?.iterations ?? 100
 
 			expect(isSSEError(thrown)).toBe(true)
 			expect(iterations).toBeGreaterThan(0)
@@ -1023,10 +1016,10 @@ describe('SSEParser — (G) property / invariant suites', () => {
 	it('G3 25 seeded-fuzz random partitions of the corpus all match the whole-string parse', () => {
 		const rng = seededRandom(0xc0ffee)
 
-		for (let trial = 0; trial < 25; trial += 1) {
+		Array.from({ length: 25 }).forEach(() => {
 			const chunks = partition(CORPUS, rng)
 			const parser = new SSEParser()
 			expect(feedAll(parser, chunks)).toEqual(EXPECTED)
-		}
+		})
 	})
 })

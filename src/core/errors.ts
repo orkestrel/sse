@@ -1,5 +1,5 @@
 import type { SSEErrorCode } from './types.js'
-import { isInstance } from '@orkestrel/contract'
+import { holds, INTRINSICS, isInstance, isObject } from '@orkestrel/contract'
 
 // .claude/rules/typescript.md, Errors and outcomes: a configured `limit` exceeded by a
 // `parse(chunk)` call `throw`s an `SSEError` carrying a machine-readable `code`, so a `catch`
@@ -48,6 +48,7 @@ export class SSEError extends Error {
 	 */
 	constructor(code: SSEErrorCode, message: string, context?: Readonly<Record<string, unknown>>) {
 		super(message)
+		INTRINSICS.define(this, Symbol.for('@orkestrel/sse.SSEError'), { value: this })
 		this.name = 'SSEError'
 		this.code = code
 		if (context !== undefined) this.context = context
@@ -56,6 +57,10 @@ export class SSEError extends Error {
 
 /**
  * Narrows an unknown caught value to an {@link SSEError}.
+ *
+ * @remarks
+ * Recognizes the own identity brand and declared members across package copies.
+ * Accepts subclasses without requiring their name; rejects transparent proxies.
  *
  * @param value - The value to test (typically a `catch` binding)
  * @returns True if `value` is an {@link SSEError}; false otherwise
@@ -72,5 +77,12 @@ export class SSEError extends Error {
  * ```
  */
 export function isSSEError(value: unknown): value is SSEError {
-	return isInstance(value, SSEError)
+	return holds(() => {
+		if (!isInstance(value, Error) || INTRINSICS.prototype(value) === Error.prototype) return false
+		if (INTRINSICS.describe(value, Symbol.for('@orkestrel/sse.SSEError'))?.value !== value)
+			return false
+		const code: unknown = INTRINSICS.reflect.read(value, 'code')
+		const context: unknown = INTRINSICS.reflect.read(value, 'context')
+		return code === 'OVERFLOW' && (context === undefined || isObject(context))
+	})
 }
