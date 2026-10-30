@@ -36,7 +36,7 @@ parser.clear() // drop any buffered partial line / event - ready for a fresh str
 
 A `Shape` cell holds an interface's data members as bare names in braces, `?` marking an optional member and `plus` introducing its call-signature members, and a type alias's own type literal with a union's arms escaped as `\|`.
 
-| Type                 | Kind      | Shape                                    | Summary                                                                                                                                                                                                                                                                                                           |
+| Name                 | Kind      | Shape                                    | Summary                                                                                                                                                                                                                                                                                                           |
 | -------------------- | --------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SSEEvent`           | interface | `{ data, event?, id?, retry? }`          | Represents one dispatched Server-Sent Event — the value a blank line flushes from an `SSEParserInterface`. Its `data` holds every `data:` field of that event joined by `\n` with no trailing newline, and `event` / `id` / `retry` hold the last field of each name the event carried.                           |
 | `SSEParserInterface` | interface | `{ id, retry } plus parse, flush, clear` | Represents a stateful Server-Sent-Events (SSE) stream parser: feed it string chunks, get back the complete events dispatched so far. A trailing partial line / in-progress event is buffered until the rest arrives, and the sticky `id` / `retry` getters carry the connection state a dispatch leaves in place. |
@@ -53,7 +53,7 @@ const options: SSEParserOptions = { limit: 1_000_000 }
 
 A `Shape` cell holds the constant's declared type.
 
-| API   | Kind  | Shape  | Summary                                                                                                                                              |
+| Name  | Kind  | Shape  | Summary                                                                                                                                              |
 | ----- | ----- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `NUL` | const | string | Names the null byte (`U+0000`). The SSE spec voids an `id:` field whose value contains it, so an `id` carrying a NUL is never surfaced.              |
 | `BOM` | const | string | Names the byte-order mark (`U+FEFF`), stripped from the first non-empty chunk of an SSE stream (a leading mark on later chunks is ordinary content). |
@@ -67,7 +67,7 @@ BOM.charCodeAt(0) // 0xfeff
 
 ### Errors
 
-| API          | Kind     | Summary                                                                                                                                                       |
+| Name         | Kind     | Summary                                                                                                                                                       |
 | ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SSEError`   | class    | Represents an error the SSE parser throws, carrying the machine-readable `SSEErrorCode` a `catch` branches on and an optional `context` of diagnostic detail. |
 | `isSSEError` | function | Narrows an unknown caught value to an `SSEError`.                                                                                                             |
@@ -93,7 +93,7 @@ non-writable own property.
 
 ### Factories
 
-| API               | Kind     | Summary                                                                                                                                                                                |
+| Name              | Kind     | Summary                                                                                                                                                                                |
 | ----------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `createSSEParser` | function | Creates a Server-Sent-Events (SSE) stream parser — a stateful `SSEParserInterface` handle, backed by `SSEParser`, that turns string chunks into the complete events dispatched so far. |
 
@@ -112,7 +112,7 @@ parser.parse('\n\n') // [{ data: '1', event: 'ping' }]
 
 ### Classes
 
-| API         | Kind  | Summary                                                                                                                                                                                                                         |
+| Name        | Kind  | Summary                                                                                                                                                                                                                         |
 | ----------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SSEParser` | class | Implements `SSEParserInterface` over one internal line buffer, reassembling an event split across chunk boundaries once its blank line arrives and holding the sticky `id` / `retry` connection state until `clear()` drops it. |
 
