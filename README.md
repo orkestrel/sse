@@ -18,7 +18,7 @@ npm install @orkestrel/sse
 
 - Node.js >= 22.12.0
 - ESM + CJS (dual-format build)
-- Runtime dependency: `@orkestrel/contract`
+- Runtime dependencies: `@orkestrel/codec` and `@orkestrel/contract`
 
 ## Usage
 

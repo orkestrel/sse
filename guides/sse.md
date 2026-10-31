@@ -53,17 +53,17 @@ const options: SSEParserOptions = { limit: 1_000_000 }
 
 A `Shape` cell holds the constant's declared type.
 
-| Name  | Kind  | Signature | Summary                                                                                                                                              |
-| ----- | ----- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NUL` | const | `string`  | Names the null byte (`U+0000`). The SSE spec voids an `id:` field whose value contains it, so an `id` carrying a NUL is never surfaced.              |
-| `BOM` | const | `string`  | Names the byte-order mark (`U+FEFF`), stripped from the first non-empty chunk of an SSE stream (a leading mark on later chunks is ordinary content). |
+| Name  | Kind  | Signature | Summary                                                                                                                                 |
+| ----- | ----- | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `NUL` | const | `string`  | Names the null byte (`U+0000`). The SSE spec voids an `id:` field whose value contains it, so an `id` carrying a NUL is never surfaced. |
 
 ```ts
-import { BOM, NUL } from '@orkestrel/sse'
+import { NUL } from '@orkestrel/sse'
 
 NUL.charCodeAt(0) // 0
-BOM.charCodeAt(0) // 0xfeff
 ```
+
+The parser strips the byte-order mark `BOM` that `@orkestrel/codec` exports from the first non-empty chunk of a stream; a leading mark on a later chunk is ordinary content.
 
 ### Errors
 

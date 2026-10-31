@@ -1,4 +1,5 @@
-import { BOM, NUL, SSEParser, createSSEParser, isSSEError } from '@src/core'
+import { BOM } from '@orkestrel/codec'
+import { NUL, SSEParser, createSSEParser, isSSEError } from '@src/core'
 import { seededRandom } from '@orkestrel/contract'
 import { captureError, requireValue } from '@orkestrel/test'
 import { describe, expect, it } from 'vitest'

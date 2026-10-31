@@ -43,7 +43,7 @@ await new GuideCommand({
 }).execute(async ({ files, report, root, rows }) => {
 	const { computeSymbolKey, findMissingSymbols } = await import('@orkestrel/guide')
 	const { captureError, requireValue } = await import('@orkestrel/test')
-	const { BOM, NUL, SSEError, SSEParser, createSSEParser, isSSEError } = await import('@src/core')
+	const { NUL, SSEError, SSEParser, createSSEParser, isSSEError } = await import('@src/core')
 	const { expectSSEError } = await import('./setup.js')
 	const { describe, expect, it } = await import('vitest')
 	const own = requireValue(
@@ -186,11 +186,12 @@ await new GuideCommand({
 
 		it('reads the codepoints the Constants fence claims', () => {
 			expect(NUL.charCodeAt(0)).toBe(0)
-			expect(BOM.charCodeAt(0)).toBe(0xfeff)
 		})
 
 		it('carries the Constants fence lines the transcription copies', () => {
-			expect(guideText).toContain('NUL.charCodeAt(0) // 0\nBOM.charCodeAt(0) // 0xfeff')
+			expect(guideText).toContain(
+				"import { NUL } from '@orkestrel/sse'\n\nNUL.charCodeAt(0) // 0\n```",
+			)
 		})
 
 		it('narrows the Errors fence throw to its OVERFLOW code', () => {

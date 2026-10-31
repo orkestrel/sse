@@ -1,5 +1,6 @@
 import type { SSEEvent, SSEParserInterface, SSEParserOptions } from './types.js'
-import { BOM, NUL } from './constants.js'
+import { BOM } from '@orkestrel/codec'
+import { NUL } from './constants.js'
 import { SSEError } from './errors.js'
 
 /**
