@@ -34,8 +34,6 @@ parser.clear() // drop any buffered partial line / event - ready for a fresh str
 
 ### Types
 
-A `Shape` cell holds an interface's data members as bare names in braces, `?` marking an optional member and `plus` introducing its call-signature members, and a type alias's own type literal with a union's arms escaped as `\|`.
-
 | Name                 | Kind      | Signature                                  | Summary                                                                                                                                                                                                                                                                                                           |
 | -------------------- | --------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SSEEvent`           | interface | `{ data, event?, id?, retry? }`            | Represents one dispatched Server-Sent Event — the value a blank line flushes from an `SSEParserInterface`. Its `data` holds every `data:` field of that event joined by `\n` with no trailing newline, and `event` / `id` / `retry` hold the last field of each name the event carried.                           |
@@ -50,8 +48,6 @@ const options: SSEParserOptions = { limit: 1_000_000 }
 ```
 
 ### Constants
-
-A `Shape` cell holds the constant's declared type.
 
 | Name  | Kind  | Signature | Summary                                                                                                                                 |
 | ----- | ----- | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
